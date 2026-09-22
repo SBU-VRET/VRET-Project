@@ -1,0 +1,112 @@
+# VRET — Virtual Reality Exposure Therapy (VIP, 2026 Fall → 2027 Spring)
+
+Two-semester team plan built from the Fall 2026 kickoff slides. This file is the
+team-level plan; each person has their own weekly breakdown in their directory:
+
+- [jayden/PLAN.md](jayden/PLAN.md) — Clinical liaison, scene therapy design, patient data
+- [amanda/PLAN.md](amanda/PLAN.md) — Scene schema + automation tooling
+- [coco/PLAN.md](coco/PLAN.md) — Scene schema + automation tooling
+- [kevin/PLAN.md](kevin/PLAN.md) — Unreal/Babylon/VR device integration
+- [fahim/PLAN.md](fahim/PLAN.md) — Repo, build pipeline, technical coordination
+- [carlos/PLAN.md](carlos/PLAN.md) — Floating volunteer support
+
+## Project Goal
+
+- Recreate traumatic real-world scenarios in VR for exposure therapy
+- Test the therapeutic tool on actual patients
+- Gather qualitative and quantitative data from patients
+- Automate the tools (compatible across many devices)
+
+## Roster & Weekly Time Budget
+
+Per University VIP policy: 3 hrs/week per credit.
+
+| Person | Course/Credits | Hrs/wk | Split |
+|---|---|---|---|
+| Jayden Shofolahan | VIP 395, 1 cr | 3 | 1 meeting, 1 independent, 1 research |
+| Amanda Chen | VIP 395, 1 cr | 3 | 1 meeting, 1 independent, 1 research |
+| Coco Gao | VIP 395, 1 cr | 3 | 1 meeting, 1 independent, 1 research |
+| Kevin Chen | VIP 395, 1 cr | 3 | 1 meeting, 1 independent, 1 research |
+| Fahim Jawad | VIP 595 / CSE 523, 4 cr | 12 | 2 meeting, 4 independent, 3 coordination, 3 research |
+| Carlos Deleon | Volunteer | 1–2 | 1 research, 1 task work (rotates by need) |
+
+## Tools & Tech Stack
+
+| Tool | Role |
+|---|---|
+| Unreal Engine | Upstream level/scene authoring tool feeding into Babylon.js — **not** the deployment runtime |
+| Babylon.js + WebXR | **Confirmed deployment target.** Combines scene, environment, animation into the deployed VR unit, runs in-browser on-device |
+| Blender 3D | Character build + animation, blend shapes for facial transitions |
+| ARKit-52 | Facial expression naming scheme aligning animation with audio |
+| NVIDIA Audio2Face-3D / LAM Audio2Expression | Blend shape weights from audio |
+| QwenTTS | Offline character voice line generation |
+| GitHub | File storage + build pipeline (audio, blendshapes, models, scene data) |
+| Text to VRMA | Idle animation generation (candidate, Fahim to validate) |
+
+**Integration flow:** Unreal Engine + Blender 3D (character models, blend shapes) →
+Babylon.js ← Audio2Expression ← QwenTTS. Babylon.js/WebXR is what actually ships to
+the Quest device; Unreal Engine's role is scene/behavior authoring that feeds into
+that pipeline, not a separate runtime.
+
+## How We Work Together
+
+- Whole team + faculty advisor: **Fri 3:30–4:30 PM**, weekly, sets the week's agenda
+- Async: Discord + email
+- Scheduling: Timeful (link needs updating — flagged as open item below)
+- Subteam syncs happen off the Friday slot, as needed (see each person's
+  Collaboration section)
+
+## Master Timeline
+
+The original kickoff timeline (9/4 → 12/9) tracks Jayden's scene/clinical arc most
+closely and is used here as the backbone for cross-team milestones — the other
+subteams' weekly plans are paced against their own task lists, not this timeline.
+
+### Fall 2026 (Sept 22 – Dec 9, 2026)
+
+| Weeks | Milestone |
+|---|---|
+| 9/21 – 10/4 | Onboarding: repo access, docs/papers read, psychologist outreach starts, repo audit, **IRB status confirmed with faculty advisor** |
+| 10/5 – 10/25 | Core build: facial-animation/audio sync fix, automation script prototype, Blueprint Struct, therapeutic scene draft |
+| 10/26 – 11/15 | Integration: KPC clinician input, validation tooling, first Quest deployment |
+| 11/16 – 12/7 | Stabilize + wrap: Thanksgiving week is reduced-load; finalize Fall deliverables, retro, scope Spring |
+
+**Fall exit criteria:** reliable Babylon.js build loading the existing scene/characters/audio/animations, documented schema + validation tooling, a working automation script slice, a deployable Quest 3/3s build, and a finalized therapeutic scene draft reviewed by psychologists.
+
+### Winter Gap (Dec 10, 2026 – Jan 24, 2027)
+
+No scheduled work. Optional/self-paced: finish any outstanding literature review or documentation. This gap is intentionally excluded from the weekly plans.
+
+### Spring 2027 (Jan 25 – May 8, 2027)
+
+*Dates are estimated from SBU's typical spring calendar — confirm against the actual registrar calendar once published and adjust the week tables if it shifts.*
+
+| Weeks | Milestone |
+|---|---|
+| 1/25 – 2/8 | Resume, confirm IRB/ethics clearance, authoring tool + behavior-tree work begins |
+| 2/9 – 3/1 | Recruit test subjects, pilot test session(s), protocol refinement |
+| 3/2 – 3/22 | Main testing window (target n=10), spring break falls in this range (assumed ~3/15 — confirm and adjust) |
+| 3/23 – 4/12 | Finish remaining sessions, begin qual/quant data analysis, automation-at-scale |
+| 4/13 – 5/8 | Finalize data analysis, polish/scale pipeline, final presentation prep |
+
+**Spring exit criteria:** completed test sessions with real subjects (n≈10), qualitative + quantitative data analyzed (interviews + Likert), authoring tool + at-scale automation working, NPC behavior trees/Smart Objects integrated, cross-device VR deployment stable.
+
+## Cross-Team Dependencies
+
+- **Amanda/Coco → Fahim:** must sync on Bennett & Jungu branch history before scoping new automation tooling, so work isn't duplicated.
+- **Amanda/Coco → Kevin:** JSON automation output must match the Blueprint Struct's expected keys.
+- **Amanda/Coco → Jayden:** automation must wire voice/audio into the scene's `speak`/`lipSync` fields.
+- **Kevin ↔ Fahim:** Babylon.js/Unreal Engine compatibility troubleshooting is joint work — Unreal's output has to cleanly feed Babylon.js.
+- **Jayden ↔ Fahim:** facial animation/lip-sync must be tested against actual voice files together.
+
+## Decisions Already Made
+
+- **Deployment target: Babylon.js + WebXR, not Unreal Engine.** Unreal Engine is used upstream for scene/level authoring and (per Kevin's Spring tasks) NPC behavior tree/Smart Object design, but the pipeline that ships to the Quest device is Babylon.js/WebXR. Amanda/Coco's automation should target this pipeline directly (VRM/VRMA-compatible outputs into Babylon.js), and Kevin's Blueprint Struct/behavior tree work should be understood as content-authoring tooling that feeds that pipeline rather than a parallel runtime.
+
+## Risks & Open Items
+
+1. **IRB / ethics approval status is unknown** — not mentioned in the kickoff deck, and not confirmed whether a prior-semester process already exists. **First action item for Jayden in Week 1 (9/21):** find the faculty advisor and get a definitive answer on status/lead time. This is the critical path for the entire Spring testing milestone — treat it as more urgent than the n=10 recruitment itself, since approval can take weeks to months and everything in Spring depends on it.
+2. **Timeful link is stale** (slide flags it as needing an update) — fix before relying on it for scheduling.
+3. **Spring semester dates and spring break are estimated**, not confirmed against the registrar — revisit in January.
+4. **n=10 realistic patient testing in Fall (per original 11/6 date) is very unlikely** without IRB clearance already in hand; this plan pushes actual testing to Spring and treats Fall's "test subject" language as recruitment/protocol prep instead.
+5. **KPC (Kevin's clinical partner contact) is not further identified** — confirm the specifics of that relationship (who, what patient population, whether they factor into the IRB/recruitment pathway) once known.
