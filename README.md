@@ -106,7 +106,5 @@ No scheduled work. Optional/self-paced: finish any outstanding literature review
 ## Risks & Open Items
 
 1. **IRB / ethics approval status is unknown** — not mentioned in the kickoff deck, and not confirmed whether a prior-semester process already exists. **First action item for Jayden in Week 1 (9/21):** find the faculty advisor and get a definitive answer on status/lead time. This is the critical path for the entire Spring testing milestone — treat it as more urgent than the n=10 recruitment itself, since approval can take weeks to months and everything in Spring depends on it.
-2. **Timeful link is stale** (slide flags it as needing an update) — fix before relying on it for scheduling.
 3. **Spring semester dates and spring break are estimated**, not confirmed against the registrar — revisit in January.
 4. **n=10 realistic patient testing in Fall (per original 11/6 date) is very unlikely** without IRB clearance already in hand; this plan pushes actual testing to Spring and treats Fall's "test subject" language as recruitment/protocol prep instead.
-5. **KPC (Kevin's clinical partner contact) is not further identified** — confirm the specifics of that relationship (who, what patient population, whether they factor into the IRB/recruitment pathway) once known.
