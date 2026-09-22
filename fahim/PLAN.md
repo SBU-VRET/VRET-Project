@@ -1,14 +1,14 @@
 # Fahim Jawad — Plan
 
 **Track:** Repository/build pipeline, technical coordination, validation tooling
-**Time budget:** VIP 595 / CSE 523, 4 credits = 12 hrs/week (2 meeting, 4 independent work, 3 team coordination, 3 research)
-
+**Time budget:** VIP 595 / CSE 523, 4 credits = 12 hrs/week (2 meeting, 4 independent work, 4 team coordination, 2 research)
 ## Role (from kickoff slides)
 
 **Tasks**
 - Dissect and refactor the GitHub repository for existing features and prior-semester testing
 - Analyze and correct the facial animation/audio synchronization gap
 - Coordinate and document team progress, tasks, and collaboration
+- Own meeting notes and GitHub wiki/docs upkeep, and track open action items across subteams (absorbed from Carlos's floating role — he isn't currently carrying a standing assignment)
 - Ensure accurate compilation and loading of scenes in Babylon.js using existing builds and characters, noting/adjusting for performance gaps
 - Integrate idle animations for character models, potentially using Text to VRMA
 - Standardize the explicit software build process and how data is compiled
@@ -17,26 +17,28 @@
 
 **Realistic Achievement:** refactored and documented repo structure so future team members understand the existing pipeline and prior work; a reliable Babylon.js build/demo loading the existing scene, characters, audio, and animations correctly; a standardized, repeatable build and deployment workflow.
 
-**Collaboration:** with Amanda & Coco, coordinate repo structure, branches, and scene JSON format so their automation integrates cleanly; with Kevin, integrate scene JSON/Babylon.js work with the Unreal/VR implementation and troubleshoot compatibility; with Jayden, integrate voice files with facial animation/lip-sync and test dialogue/animation sync; with the whole team, track GitHub progress, resolve merge/integration problems, document decisions, and compile the team's work.
+**Collaboration:** with Amanda & Coco, coordinate repo structure, branches, and scene JSON format so their automation integrates cleanly; with Kevin, integrate scene JSON/Babylon.js work with the Unreal/VR implementation and troubleshoot compatibility; with Jayden, integrate voice files with facial animation/lip-sync and test dialogue/animation sync; with the whole team, track GitHub progress, resolve merge/integration problems, document decisions, compile the team's work, take Friday meeting notes, and keep the GitHub wiki/docs current.
 
 Given the largest time budget on the team, this role functions as technical lead — most weeks include a coordination pass across all four other subteams in addition to direct build work.
 
 ## Fall 2026 (Sept 22 – Dec 9)
 
-| Week of | Focus | Tasks |
-|---|---|---|
-| 9/21 | Full repo audit | Inventory existing branches (Bennett & Jungu specifically), prior-semester features/tests; read all Drive papers + VRET GitHub, LAM_Audio2Expression, valid-vrm-avatars, Audio2Face docs; set up local dev environment |
-| 9/28 | Refactor plan + branch sync | Draft repo refactor plan (folder structure, branch strategy); walk Amanda/Coco through Bennett & Jungu branch findings before they scope new tooling |
-| 10/5 | Refactor + bug isolation | Continue refactor; begin diagnosing the facial animation/audio sync gap — reproduce it, isolate whether it's in Audio2Expression output, blend shape mapping, or Babylon.js playback |
-| 10/12 | Fix + baseline build | Fix or mitigate the sync issue; get a baseline Babylon.js scene loading reliably (existing characters/audio/animations) |
-| 10/19 | Build standardization | Document the explicit build process; start the technical setup/build documentation draft |
-| 10/26 | Validation tooling start | Begin validation tooling for scene JSON/models/animations/audio (schema validation before Babylon.js load); coordinate with Amanda/Coco so the validator matches their documented schema |
-| 11/2 | Validation + idle animation research | Continue validation tooling; research Text to VRMA for idle animations, prototype integration |
-| 11/9 | Idle animation integration | Integrate idle animations via Text to VRMA (or note a fallback if incompatible); sync with Kevin on Unreal/Babylon compatibility issues found so far |
-| 11/16 | Polish + repo hygiene | Continue idle animation polish; team-wide GitHub cleanup (resolve stale branches, open PRs) |
-| 11/23 | Thanksgiving (reduced) | Light week — documentation catch-up |
-| 11/30 | Finalize | Finalize the reliable Babylon.js demo build (scene + characters + audio + animations + idle); finalize validation tooling v1 |
-| 12/7 | Fall wrap-up | Publish setup/build/test/run documentation; compile the team's Fall progress into an end-of-semester report; retro; scope Spring priorities |
+**Standing weekly task (every week below, not restated per row):** take Friday meeting notes and post to Discord, keep the GitHub wiki/docs current, and track open action items across subteams.
+
+| Done | Week of | Focus | Tasks |
+|---|---|---|---|
+| [ ] 9/21 | Full repo audit | Inventory existing branches (Bennett & Jungu specifically) and prior-semester features/tests; read VRET GitHub + core Drive papers; set up local dev environment |
+| [ ] 9/28 | Refactor plan + branch sync | Draft repo refactor plan (folder structure, branch strategy); read remaining docs (LAM_Audio2Expression, valid-vrm-avatars, Audio2Face); walk Amanda/Coco through Bennett & Jungu branch findings before they scope new tooling |
+| [ ] 10/5 | Refactor + bug isolation | Continue refactor; begin diagnosing the facial animation/audio sync gap — reproduce it, isolate whether it's in Audio2Expression output, blend shape mapping, or Babylon.js playback |
+| [ ] 10/12 | Fix + baseline build | Fix or mitigate the sync issue; get a baseline Babylon.js scene loading reliably (existing characters/audio/animations) |
+| [ ] 10/19 | Build standardization | Document the explicit build process; start the technical setup/build documentation draft |
+| [ ] 10/26 | Validation tooling start | Begin validation tooling for scene JSON/models/animations/audio (schema validation before Babylon.js load); coordinate with Amanda/Coco so the validator matches their documented schema |
+| [ ] 11/2 | Validation + idle animation research | Continue validation tooling; research Text to VRMA for idle animations (evaluation only) |
+| [ ] 11/9 | Idle animation integration | Prototype + integrate idle animations via Text to VRMA (or note a fallback if incompatible); sync with Kevin on Unreal/Babylon compatibility issues found so far |
+| [ ] 11/16 | Polish + repo hygiene | Continue idle animation polish; start team-wide GitHub cleanup (resolve stale branches, open PRs) |
+| [ ] 11/23 | Thanksgiving (reduced) | Light week — finish GitHub cleanup carried over from 11/16; documentation catch-up |
+| [ ] 11/30 | Finalize | Finalize the reliable Babylon.js demo build (scene + characters + audio + animations + idle); finalize validation tooling v1; publish setup/build/test/run documentation |
+| [ ] 12/7 | Fall wrap-up | Compile the team's Fall progress into an end-of-semester report; retro; scope Spring priorities |
 
 **Fall exit criteria:** refactored/documented repo, reliable Babylon.js build/demo, facial animation/audio sync fixed, validation tooling v1, published local setup documentation.
 
@@ -46,29 +48,45 @@ No scheduled work.
 
 ## Spring 2027 (Jan 25 – May 8, dates estimated — confirm against registrar calendar)
 
-| Week of | Focus | Tasks |
-|---|---|---|
-| 1/25 | Resume | Confirm the build is still stable after the break; re-sync with all subteams on Spring priorities |
-| 2/1 | Support integration | Support Amanda/Coco's authoring-tool integration into the main pipeline; support Kevin's behavior tree/Smart Object integration |
-| 2/8 | Harden for testing | Harden the build for real testing use (crash resilience, session logging) — Jayden's pilot sessions begin around now |
-| 2/15 | Continue hardening | Continue hardening; add session/data logging hooks if the psych team needs technical data capture during sessions |
-| 2/22 | Testing support | Support first test session batches technically (on-call for build issues); continue merge/integration coordination |
-| 3/1 | Testing support | Continue technical support during testing; keep validation tooling current as scene variants grow (choice-based storylines, multiple scenarios) |
-| 3/8 | Mid-semester audit | Repo/documentation audit — ensure authoring-tool-generated scenes still pass validation |
-| 3/15 | Spring break (reduced) | Light week — docs catch-up |
-| 3/22 | Testing support continues | Continue technical support for testing; help scale the build to additional scenario types |
-| 3/29 | Continue scaling | Continue scaling; resolve integration bugs across automation → Unreal/Babylon → VR device pipeline |
-| 4/5 | Full pipeline test | Full pipeline integration test (automation script → validated scene → Babylon/Unreal build → Quest deployment) |
-| 4/12 | Deployment docs v2 | Performance/build polish; finalize standardized deployment workflow documentation v2 |
-| 4/19 | Data export support | Support final technical needs for data (e.g., exporting session data for Jayden's analysis) |
-| 4/26 | Continuity documentation | Final documentation pass — full setup/build/test/run/deploy guide for future VIP semesters |
-| 5/3 | Presentation prep | Final presentation prep — technical demo, compile whole-team results |
+**Standing weekly task (every week below, not restated per row):** take Friday meeting notes and post to Discord, keep the GitHub wiki/docs current, and track open action items across subteams.
+
+| Done | Week of | Focus | Tasks |
+|---|---|---|---|
+| [ ] 1/25 | Resume | Confirm the build is still stable after the break; re-sync with all subteams on Spring priorities |
+| [ ] 2/1 | Support integration | Support Amanda/Coco's authoring-tool integration into the main pipeline |
+| [ ] 2/8 | Harden for testing + Kevin support | Harden the build for real testing use (crash resilience, session logging) — Jayden's pilot sessions begin around now; support Kevin's behavior tree/Smart Object integration |
+| [ ] 2/15 | Continue hardening | Continue hardening; add session/data logging hooks if the psych team needs technical data capture during sessions |
+| [ ] 2/22 | Testing support | Support first test session batches technically (on-call for build issues — top priority this week); merge/integration coordination as time allows; non-critical independent/research work deferred |
+| [ ] 3/1 | Testing support | Continue technical support during testing; keep validation tooling current as scene variants grow (choice-based storylines, multiple scenarios) |
+| [ ] 3/8 | Mid-semester audit | Repo/documentation audit — ensure authoring-tool-generated scenes still pass validation |
+| [ ] 3/15 | Spring break (reduced) | Light week — docs catch-up |
+| [ ] 3/22 | Testing support continues | Continue technical support for testing (on-call — top priority this week); non-critical independent/research work deferred |
+| [ ] 3/29 | Continue scaling | Continue scaling; resolve integration bugs across automation → Unreal/Babylon → VR device pipeline |
+| [ ] 4/5 | Full pipeline test | Full pipeline integration test (automation script → validated scene → Babylon/Unreal build → Quest deployment) |
+| [ ] 4/12 | Deployment docs v2 | Performance/build polish; finalize standardized deployment workflow documentation v2 |
+| [ ] 4/19 | Data export support | Support final technical needs for data (e.g., exporting session data for Jayden's analysis) |
+| [ ] 4/26 | Continuity documentation | Final documentation pass — full setup/build/test/run/deploy guide for future VIP semesters; start pulling together whole-team results ahead of 5/3 |
+| [ ] 5/3 | Presentation prep | Final presentation prep — technical demo, finish compiling whole-team results |
 
 **Spring exit criteria:** build stable and supported through the full testing window, full pipeline integration verified end-to-end, continuity documentation published for the next semester's team.
+
+## Benchmarks / Definition of Done
+
+### Fall 2026
+- [ ] Repo refactored and documented (structure, branches, prior-semester context)
+- [ ] Facial animation/audio sync gap diagnosed and fixed
+- [ ] Reliable Babylon.js build/demo loading scene + characters + audio + animations
+- [ ] Validation tooling v1 for scene JSON, models, animations, and audio
+- [ ] Local setup/build/test/run documentation published
+
+### Spring 2027
+- [ ] Build hardened and stable through the full testing window
+- [ ] Full pipeline integration verified end-to-end (automation → Babylon.js/WebXR → Quest)
+- [ ] Continuity documentation published for the next VIP semester's team
 
 ## Collaboration Checkpoints
 
 - **Amanda/Coco:** repo structure, branches, schema/validation alignment (weekly-ish, front-loaded in Fall)
 - **Kevin:** Unreal/Babylon compatibility troubleshooting (ongoing)
 - **Jayden:** facial animation/lip-sync testing against real voice files (ongoing, critical during Spring testing)
-- **Whole team:** GitHub progress tracking, merge/integration resolution, decision documentation (continuous)
+- **Whole team:** GitHub progress tracking, merge/integration resolution, decision documentation, Friday meeting notes, wiki upkeep, cross-team action-item tracking (continuous)

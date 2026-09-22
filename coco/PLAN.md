@@ -28,20 +28,20 @@ Both of you own the automation script together; this split is a starting point, 
 
 ## Fall 2026 (Sept 22 – Dec 9)
 
-| Week of | Focus | Tasks |
-|---|---|---|
-| 9/21 | Onboarding | Get repo access; read VRET GitHub, LAM_Audio2Expression, valid-vrm-avatars repos; read the Drive papers |
-| 9/28 | Faster-generation research | Start researching tools/techniques for faster model/environment generation (procedural or AI-assisted, vs. building by hand) |
-| 10/5 | Branch sync | Join Amanda's sync with Fahim on Bennett & Jungu branch history before scoping new tooling |
-| 10/12 | Research + storyline start | Compile faster-generation research findings; start researching choice-based storyline mechanics |
-| 10/19 | Automation script scoping | With Amanda, define automation script inputs/outputs (avatar list + dialogue script → `scene_XX.json` skeleton) |
-| 10/26 | Script build | Continue script prototype, targeting VRM/VRMA output for the Babylon.js/WebXR pipeline |
-| 11/2 | Script build | Continue script build |
-| 11/9 | Testing | Test the automation script against at least one real scene; fix bugs |
-| 11/16 | Wrap research | Finalize the choice-based storyline research write-up (feasibility + recommended approach for Spring) |
-| 11/23 | Thanksgiving (reduced) | Light week, buffer/catch-up |
-| 11/30 | Finalize | Finalize working automation script demo alongside Amanda's schema doc |
-| 12/7 | Fall wrap-up | Demo script + research to the team; retro; help scope Spring authoring-tool work |
+| Done | Week of | Focus | Tasks |
+|---|---|---|---|
+| [ ] 9/21 | Onboarding | Get repo access; read VRET GitHub, LAM_Audio2Expression, valid-vrm-avatars repos; read the Drive papers |
+| [ ] 9/28 | Faster-generation research | Start researching tools/techniques for faster model/environment generation (procedural or AI-assisted, vs. building by hand) |
+| [ ] 10/5 | Branch sync | Join Amanda's sync with Fahim on Bennett & Jungu branch history before scoping new tooling |
+| [ ] 10/12 | Research + storyline start | Compile faster-generation research findings; start researching choice-based storyline mechanics |
+| [ ] 10/19 | Automation script scoping | With Amanda, define automation script inputs/outputs (avatar list + dialogue script → `scene_XX.json` skeleton) |
+| [ ] 10/26 | Script build | Continue script prototype, targeting VRM/VRMA output for the Babylon.js/WebXR pipeline |
+| [ ] 11/2 | Script build | Continue script build |
+| [ ] 11/9 | Testing | Test the automation script against at least one real scene; fix bugs |
+| [ ] 11/16 | Wrap research | Finalize the choice-based storyline research write-up (feasibility + recommended approach for Spring) |
+| [ ] 11/23 | Thanksgiving (reduced) | Light week, buffer/catch-up |
+| [ ] 11/30 | Finalize | Finalize working automation script demo alongside Amanda's schema doc |
+| [ ] 12/7 | Fall wrap-up | Demo script + research to the team; retro; help scope Spring authoring-tool work |
 
 **Fall exit criteria:** working automation script generating a valid scene file from simple inputs, choice-based storyline feasibility write-up delivered.
 
@@ -51,25 +51,39 @@ No scheduled work.
 
 ## Spring 2027 (Jan 25 – May 8, dates estimated — confirm against registrar calendar)
 
-| Week of | Focus | Tasks |
-|---|---|---|
-| 1/25 | Authoring tool scoping | Gather requirements from the team for a lightweight authoring tool wrapping the script |
-| 2/1 | Build starts | Begin authoring tool build (form/UI → generates scene JSON via the script) |
-| 2/8 | Branching fields | Continue authoring tool; integrate choice-based storyline fields into the schema |
-| 2/15 | Iterate | Iterate authoring tool based on team feedback |
-| 2/22 | Scale: environments | Extend automation to swap environments at scale |
-| 3/1 | Scale: avatars | Extend automation to swap avatars at scale |
-| 3/8 | Scale: dialogue | Extend automation to swap dialogue/voice at scale; integration test with Jayden's therapeutic scene script |
-| 3/15 | Spring break (reduced) | Light/optional week |
-| 3/22 | Integration testing | Generate 2–3 full alternate scenarios end-to-end using the authoring tool |
-| 3/29 | Bug fixes | Fix issues from integration testing; polish authoring tool UX |
-| 4/5 | Unreal support | Support Kevin/Fahim on Blueprint Struct integration if automation targets that pipeline |
-| 4/12 | Documentation | Write authoring tool usage guide and schema v2 doc |
-| 4/19 | Scale testing | Stretch: scale testing across multiple scenario types |
-| 4/26 | Polish | Final polish, bug bash |
-| 5/3 | Presentation prep | Demo authoring tool + automation pipeline |
+| Done | Week of | Focus | Tasks |
+|---|---|---|---|
+| [ ] 1/25 | Authoring tool scoping | Gather requirements from the team for a lightweight authoring tool wrapping the script |
+| [ ] 2/1 | Build starts | Begin authoring tool build (form/UI → generates scene JSON via the script) |
+| [ ] 2/8 | Branching fields | Continue authoring tool; integrate choice-based storyline fields into the schema |
+| [ ] 2/15 | Iterate | Iterate authoring tool based on team feedback |
+| [ ] 2/22 | Scale: environments | Extend automation to swap environments at scale |
+| [ ] 3/1 | Scale: avatars | Extend automation to swap avatars at scale |
+| [ ] 3/8 | Scale: dialogue | Extend automation to swap dialogue/voice at scale; integration test with Jayden's therapeutic scene script |
+| [ ] 3/15 | Spring break (reduced) | Light/optional week |
+| [ ] 3/22 | Integration testing | Generate 2–3 full alternate scenarios end-to-end using the authoring tool |
+| [ ] 3/29 | Bug fixes | Fix issues from integration testing; polish authoring tool UX |
+| [ ] 4/5 | Unreal support | Support Kevin/Fahim on Blueprint Struct integration if automation targets that pipeline |
+| [ ] 4/12 | Documentation | Write authoring tool usage guide and schema v2 doc |
+| [ ] 4/19 | Scale testing | Stretch: scale testing across multiple scenario types |
+| [ ] 4/26 | Polish | Final polish, bug bash |
+| [ ] 5/3 | Presentation prep | Demo authoring tool + automation pipeline |
 
 **Spring exit criteria:** authoring tool functional end-to-end, automation extended to swap environments/avatars/dialogue at scale, choice-based storyline mechanic integrated into the schema.
+
+## Benchmarks / Definition of Done
+
+### Fall 2026
+- [ ] Working automation script generates a valid scene file from an avatar list + dialogue script
+- [ ] Choice-based storyline mechanic researched and feasibility documented
+- [ ] Faster model/environment generation research compiled
+
+### Spring 2027
+- [ ] Lightweight authoring tool functional end-to-end (UI → valid scene JSON)
+- [ ] Automation extended to swap environments at scale
+- [ ] Automation extended to swap avatars at scale
+- [ ] Automation extended to swap dialogue/voice at scale
+- [ ] Choice-based storyline mechanic integrated into the schema
 
 ## Collaboration Checkpoints
 

@@ -22,20 +22,20 @@
 
 ## Fall 2026 (Sept 22 – Dec 9)
 
-| Week of | Focus | Tasks |
-|---|---|---|
-| 9/21 | **IRB status + inventory** | **Top priority: find the faculty advisor and get a definitive answer on IRB/ethics approval status — is there a prior-semester process already in motion, or does this start from zero? This determines the entire Spring testing timeline.** Also inventory existing voice files/scene state; draft outreach list of psychologists/psychiatrists (include KPC clinicians Kevin is in contact with); start lit review on psych/neuro benefits of VR exposure therapy |
-| 9/28 | IRB follow-through + outreach | If IRB isn't started: begin the submission process (protocol description, consent forms, recruitment plan) with the faculty advisor's guidance. Send psychologist outreach emails; continue lit review write-up; sync with Fahim on how "therapy begins after scene" should be structured in the scene data |
-| 10/5 | Therapeutic scene concept | Draft the novel therapeutic-only scene concept — story beats, dialogue needs, what it deliberately avoids showing; follow up with unresponsive psychologists; continue IRB paperwork if in progress |
-| 10/12 | First clinical input | Meet with responding psychologist(s); capture requirements on pacing, triggers to avoid, therapy protocol structure |
-| 10/19 | Refine | Refine voice files per clinical input if needed; draft full script for the therapeutic-only scene |
-| 10/26 | Iterate + instrument design | Iterate therapeutic scene with psychologist feedback; start drafting the post-treatment interview questions and Likert scale instrument (these typically need to be included in the IRB submission itself, so coordinate timing) |
-| 11/2 | Finalize instrument | Finalize interview/Likert instrument; confirm IRB status/timeline with faculty advisor — determines whether any pilot testing is possible this semester |
-| 11/9 | Support scene integration | Support lip-sync/dialogue testing with Fahim; write up the technological-implications section (how tech choices affect therapy delivery) |
-| 11/16 | Pilot prep | If IRB cleared: begin soft outreach for pilot subjects. If not: finalize recruiting plan to execute the moment approval lands |
-| 11/23 | Thanksgiving (reduced) | Light week — catch up on psychologist correspondence and documentation |
-| 11/30 | Consolidate | Consolidate all clinical feedback into a finalized scene spec; prep handoff materials for Spring testing |
-| 12/7 | Fall wrap-up | Document clinical findings to date; finalize therapeutic scene draft; semester retro; set Spring testing goals |
+| Done | Week of | Focus | Tasks |
+|---|---|---|---|
+| [ ] 9/21 | **IRB status + inventory** | **Top priority: find the faculty advisor and get a definitive answer on IRB/ethics approval status — is there a prior-semester process already in motion, or does this start from zero? This determines the entire Spring testing timeline.** Also inventory existing voice files/scene state; draft outreach list of psychologists/psychiatrists (include KPC clinicians Kevin is in contact with); start lit review on psych/neuro benefits of VR exposure therapy |
+| [ ] 9/28 | IRB follow-through + outreach | If IRB isn't started: begin the submission process (protocol description, consent forms, recruitment plan) with the faculty advisor's guidance. Send psychologist outreach emails; continue lit review write-up; sync with Fahim on how "therapy begins after scene" should be structured in the scene data |
+| [ ] 10/5 | Therapeutic scene concept | Draft the novel therapeutic-only scene concept — story beats, dialogue needs, what it deliberately avoids showing; follow up with unresponsive psychologists; continue IRB paperwork if in progress |
+| [ ] 10/12 | First clinical input | Meet with responding psychologist(s); capture requirements on pacing, triggers to avoid, therapy protocol structure |
+| [ ] 10/19 | Refine | Refine voice files per clinical input if needed; draft full script for the therapeutic-only scene |
+| [ ] 10/26 | Iterate + instrument design | Iterate therapeutic scene with psychologist feedback; start drafting the post-treatment interview questions and Likert scale instrument (these typically need to be included in the IRB submission itself, so coordinate timing) |
+| [ ] 11/2 | Finalize instrument | Finalize interview/Likert instrument; confirm IRB status/timeline with faculty advisor — determines whether any pilot testing is possible this semester |
+| [ ] 11/9 | Support scene integration | Support lip-sync/dialogue testing with Fahim; write up the technological-implications section (how tech choices affect therapy delivery) |
+| [ ] 11/16 | Pilot prep | If IRB cleared: begin soft outreach for pilot subjects. If not: finalize recruiting plan to execute the moment approval lands |
+| [ ] 11/23 | Thanksgiving (reduced) | Light week — catch up on psychologist correspondence and documentation |
+| [ ] 11/30 | Consolidate | Consolidate all clinical feedback into a finalized scene spec; prep handoff materials for Spring testing |
+| [ ] 12/7 | Fall wrap-up | Document clinical findings to date; finalize therapeutic scene draft; semester retro; set Spring testing goals |
 
 **Fall exit criteria:** finalized exposure + therapeutic scene scripts reviewed by at least one psychologist, IRB process started (ideally submitted), interview/Likert instrument ready to use.
 
@@ -45,25 +45,39 @@ No scheduled work. If IRB approval is pending, staying reachable by email for an
 
 ## Spring 2027 (Jan 25 – May 8, dates estimated — confirm against registrar calendar)
 
-| Week of | Focus | Tasks |
-|---|---|---|
-| 1/25 | Resume | Re-confirm IRB approval status; close out any remaining paperwork |
-| 2/1 | Recruit | Begin recruiting test subjects (target n≈10); finalize logistics for sessions |
-| 2/8 | Pilot | Run pilot session #1 to validate the protocol end-to-end |
-| 2/15 | Adjust | Adjust protocol based on pilot results; continue recruiting |
-| 2/22 | Testing batch 1 | Run first batch of test sessions |
-| 3/1 | Testing batch 2 | Run second batch; begin collecting interview/Likert data |
-| 3/8 | Mid-check | Continue testing; mid-point check-in with psychologists on emerging data trends |
-| 3/15 | Spring break (reduced) | No sessions scheduled; optional data organization |
-| 3/22 | Testing batch 3 | Run next batch of sessions |
-| 3/29 | Finish testing | Complete remaining sessions (target: all ~10 subjects done) |
-| 4/5 | Analysis begins | Begin qualitative coding of interviews and quantitative Likert analysis |
-| 4/12 | Analysis continues | Continue analysis; draft findings summary |
-| 4/19 | Therapeutic-scene evaluation | Assess whether the novel therapeutic scene met its "no re-traumatization" goal, using subject feedback |
-| 4/26 | Finalize report | Finalize qual/quant data report |
-| 5/3 | Presentation prep | Final presentation prep and wrap-up documentation |
+| Done | Week of | Focus | Tasks |
+|---|---|---|---|
+| [ ] 1/25 | Resume | Re-confirm IRB approval status; close out any remaining paperwork |
+| [ ] 2/1 | Recruit | Begin recruiting test subjects (target n≈10); finalize logistics for sessions |
+| [ ] 2/8 | Pilot | Run pilot session #1 to validate the protocol end-to-end |
+| [ ] 2/15 | Adjust | Adjust protocol based on pilot results; continue recruiting |
+| [ ] 2/22 | Testing batch 1 | Run first batch of test sessions |
+| [ ] 3/1 | Testing batch 2 | Run second batch; begin collecting interview/Likert data |
+| [ ] 3/8 | Mid-check | Continue testing; mid-point check-in with psychologists on emerging data trends |
+| [ ] 3/15 | Spring break (reduced) | No sessions scheduled; optional data organization |
+| [ ] 3/22 | Testing batch 3 | Run next batch of sessions |
+| [ ] 3/29 | Finish testing | Complete remaining sessions (target: all ~10 subjects done) |
+| [ ] 4/5 | Analysis begins | Begin qualitative coding of interviews and quantitative Likert analysis |
+| [ ] 4/12 | Analysis continues | Continue analysis; draft findings summary |
+| [ ] 4/19 | Therapeutic-scene evaluation | Assess whether the novel therapeutic scene met its "no re-traumatization" goal, using subject feedback |
+| [ ] 4/26 | Finalize report | Finalize qual/quant data report |
+| [ ] 5/3 | Presentation prep | Final presentation prep and wrap-up documentation |
 
 **Spring exit criteria:** completed test sessions, analyzed qualitative and quantitative data, evaluation of the therapeutic-only scene's effectiveness.
+
+## Benchmarks / Definition of Done
+
+### Fall 2026
+- [ ] IRB/ethics status confirmed with faculty advisor (submission started if not already in progress)
+- [ ] Exposure scene script finalized and reviewed by at least one psychologist
+- [ ] Novel therapeutic-only scene scripted and reviewed
+- [ ] Interview + Likert scale instrument finalized and ready to use
+
+### Spring 2027
+- [ ] Test subjects recruited and sessions completed (target n≈10)
+- [ ] Qualitative interview data coded
+- [ ] Quantitative Likert data analyzed
+- [ ] Therapeutic-only scene evaluated against its "no re-traumatization" goal
 
 ## Collaboration Checkpoints
 
