@@ -5,7 +5,7 @@
 ## Role (from kickoff slides)
 
 **Tasks**
-- Dissect and refactor the GitHub repository for existing features and prior-semester testing
+- Audit the legacy TLTMedia/VRET repo for reusable prior-semester features/tests, then set up and structure the new SBU-VRET/VRET-Project repo as the project's actual home going forward (not a refactor-in-place — the team is building fresh in the new repo, cherry-picking from the old one rather than carrying its accumulated clutter over)
 - Analyze and correct the facial animation/audio synchronization gap
 - Coordinate and document team progress, tasks, and collaboration
 - Own meeting notes and GitHub wiki/docs upkeep, and track open action items across subteams (absorbed from Carlos's floating role — he isn't currently carrying a standing assignment)
@@ -27,7 +27,7 @@ Given the largest time budget on the team, this role functions as technical lead
 
 | Done | Week of | Focus | Tasks |
 |---|---|---|---|
-| [ ] 9/21 | Full repo audit | Inventory existing branches (Bennett & Jungu specifically) and prior-semester features/tests; read VRET GitHub + core Drive papers; set up local dev environment |
+| [ ] 9/21 | Full repo audit | Inventory existing branches on the legacy TLTMedia/VRET repo (Bennett & Jungu specifically) and prior-semester features/tests for anything worth porting over; read core Drive papers; set up local dev environment on the new SBU-VRET/VRET-Project repo |
 | [ ] 9/28 | Refactor plan + branch sync | Draft repo refactor plan (folder structure, branch strategy); read remaining docs (LAM_Audio2Expression, valid-vrm-avatars, Audio2Face); walk Amanda/Coco through Bennett & Jungu branch findings before they scope new tooling |
 | [ ] 10/5 | Refactor + bug isolation | Continue refactor; begin diagnosing the facial animation/audio sync gap — reproduce it, isolate whether it's in Audio2Expression output, blend shape mapping, or Babylon.js playback |
 | [ ] 10/12 | Fix + baseline build | Fix or mitigate the sync issue; get a baseline Babylon.js scene loading reliably (existing characters/audio/animations) |

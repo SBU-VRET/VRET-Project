@@ -40,7 +40,7 @@ Per University VIP policy: 3 hrs/week per credit.
 | ARKit-52 | Facial expression naming scheme aligning animation with audio |
 | NVIDIA Audio2Face-3D / LAM Audio2Expression | Blend shape weights from audio |
 | QwenTTS | Offline character voice line generation |
-| GitHub | File storage + build pipeline (audio, blendshapes, models, scene data) |
+| GitHub | File storage + build pipeline (audio, blendshapes, models, scene data). **Active repo: [SBU-VRET/VRET-Project](https://github.com/SBU-VRET/VRET-Project)** — fresh repo, not a fork of the legacy TLTMedia/VRET. Prior-semester work lives at TLTMedia/VRET and is being audited for reusable pieces (models, scenes, working scripts), but not carried over wholesale — see Fahim's 9/21 repo audit task. |
 | Text to VRMA | Idle animation generation (candidate, Fahim to validate) |
 
 **Integration flow:** Unreal Engine + Blender 3D (character models, blend shapes) →
@@ -114,7 +114,7 @@ Team-wide targets — see each person's PLAN.md for the individual breakdown beh
 
 ## Cross-Team Dependencies
 
-- **Amanda/Coco → Fahim:** must sync on Bennett & Jungu branch history before scoping new automation tooling, so work isn't duplicated.
+- **Amanda/Coco → Fahim:** must sync on Bennett & Jungu branch history (legacy TLTMedia/VRET repo) before scoping new automation tooling, so work isn't duplicated or built against the wrong repo.
 - **Amanda/Coco → Kevin:** JSON automation output must match the Blueprint Struct's expected keys.
 - **Amanda/Coco → Jayden:** automation must wire voice/audio into the scene's `speak`/`lipSync` fields.
 - **Kevin ↔ Fahim:** Babylon.js/Unreal Engine compatibility troubleshooting is joint work — Unreal's output has to cleanly feed Babylon.js.
