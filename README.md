@@ -3,12 +3,12 @@
 Two-semester team plan built from the Fall 2026 kickoff slides. This file is the
 team-level plan; each person has their own weekly breakdown in their directory:
 
-- [jayden/PLAN.md](jayden/PLAN.md) — Clinical liaison, scene therapy design, patient data
-- [amanda/PLAN.md](amanda/PLAN.md) — Scene schema + automation tooling
-- [coco/PLAN.md](coco/PLAN.md) — Scene schema + automation tooling
-- [kevin/PLAN.md](kevin/PLAN.md) — Unreal/Babylon/VR device integration
-- [fahim/PLAN.md](fahim/PLAN.md) — Repo, build pipeline, technical coordination, meeting notes/wiki upkeep
-- [carlos/PLAN.md](carlos/PLAN.md) — Floating volunteer support (no standing assignment currently)
+- [team/jayden/PLAN.md](team/jayden/PLAN.md) — Clinical liaison, scene therapy design, patient data
+- [team/amanda/PLAN.md](team/amanda/PLAN.md) — Scene schema + automation tooling
+- [team/coco/PLAN.md](team/coco/PLAN.md) — Scene schema + automation tooling
+- [team/kevin/PLAN.md](team/kevin/PLAN.md) — Unreal/Babylon/VR device integration
+- [team/fahim/PLAN.md](team/fahim/PLAN.md) — Repo, build pipeline, technical coordination, meeting notes/wiki upkeep
+- [team/carlos/PLAN.md](team/carlos/PLAN.md) — Floating volunteer support (no standing assignment currently)
 
 ## Project Goal
 
@@ -41,7 +41,10 @@ Per University VIP policy: 3 hrs/week per credit.
 | NVIDIA Audio2Face-3D / LAM Audio2Expression | Blend shape weights from audio |
 | QwenTTS | Offline character voice line generation |
 | GitHub | File storage + build pipeline (audio, blendshapes, models, scene data). **Active repo: [SBU-VRET/VRET-Project](https://github.com/SBU-VRET/VRET-Project)** — fresh repo, not a fork of the legacy TLTMedia/VRET. Prior-semester work lives at TLTMedia/VRET and is being audited for reusable pieces (models, scenes, working scripts), but not carried over wholesale — see Fahim's 9/21 repo audit task. |
-| Text to VRMA | Idle animation generation (candidate, Fahim to validate) |
+| [valid-vrm-avatars](https://github.com/TLTMedia/valid-vrm-avatars) | Pre-built VRM 1.0 avatar library (VALID dataset conversions, ARKit-52 blend shapes) — the actual source of character models, not built from scratch per-character |
+| Text to VRMA / ARDY | Idle/body animation generation — two candidates (Fahim to validate). Text to VRMA outputs `.vrma` directly; ARDY (NVIDIA research model) needs a `.npz`→BVH→VRMA conversion path and local GPU inference — lower priority |
+
+Full tool-by-tool input/output breakdown, including the exact converter scripts and format handoffs: [docs/TECH_PIPELINE.md](docs/TECH_PIPELINE.md).
 
 **Integration flow:** Unreal Engine + Blender 3D (character models, blend shapes) →
 Babylon.js ← Audio2Expression ← QwenTTS. Babylon.js/WebXR is what actually ships to

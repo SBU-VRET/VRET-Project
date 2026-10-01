@@ -9,6 +9,8 @@
 - Learn Babylon.js documentation
 - Learn Unreal Engine XR and AI system documentation
 - Ensure Babylon.js and Unreal Engine feature compatibility
+- Evaluate prebuilt/purchased environment assets (asset stores, Sketchfab, etc.) before investing in custom Unreal level-building — Unreal is for backgrounds/levels only when nothing suitable already exists
+- Build the Unreal → `.glb` export workflow into the Babylon.js Editor, and decide whether that `.glb` gets pre-combined into the `.babylon` scene file via the Editor or loaded directly at runtime (`App.ts` already imports `@babylonjs/loaders/glTF`, so both are technically possible) — see `docs/TECH_PIPELINE.md` Stage 2 for the full breakdown
 - Create a Blueprint Struct in Unreal to match keys of scene JSON files, using the JSON Utilities Plugin
 - Integrate the project onto a VR device
 - Work directly with KPC clinicians and clients to understand user needs
@@ -21,15 +23,17 @@
 
 **Engine target (resolved):** Babylon.js + WebXR is the confirmed deployment pipeline — that's what actually ships to the Quest device. Unreal Engine (Blueprint Struct, behavior trees, Smart Objects) is upstream content-authoring tooling that feeds into that pipeline, not a competing runtime, so none of this work is blocked by engine ambiguity. If Unreal-authored behavior data can't be exported into the Babylon.js pipeline cleanly, that becomes the priority compatibility issue to raise with Fahim.
 
+**Interchange format (decided):** `.glb` is the confirmed export format from Unreal into the Babylon.js side (the runtime already supports loading it via `@babylonjs/loaders/glTF`). That handoff isn't built yet — full breakdown of the pipeline and open questions in `docs/TECH_PIPELINE.md` Stage 2.
+
 ## Fall 2026 (Sept 22 – Dec 9)
 
 | Done | Week of | Focus | Tasks |
 |---|---|---|---|
 | [ ] 9/21 | Environment setup | Set up local Unreal + Babylon dev environments; identify compatibility gaps between the two |
-| [ ] 9/28 | Blueprint Struct start | Begin Blueprint Struct design in Unreal mirroring scene JSON keys; research/install the JSON Utilities Plugin |
+| [ ] 9/28 | Blueprint Struct start | Begin Blueprint Struct design in Unreal mirroring scene JSON keys; research/install the JSON Utilities Plugin; listen to the voice-line recordings on the shared Google Drive and give input on VRE-29's first-scene framing questions |
 | [ ] 10/5 | Blueprint Struct continues | Continue Blueprint Struct build; test loading a sample scene JSON into Unreal |
 | [ ] 10/12 | Clinician input | Meet with KPC clinicians and clients to gather user-needs input (device comfort, controller needs, session length) |
-| [ ] 10/19 | Deployment setup | Incorporate clinician/client feedback into the VR integration plan; begin Meta Quest 3/3s deployment pipeline setup |
+| [ ] 10/19 | Deployment setup | Incorporate clinician/client feedback into the VR integration plan; begin Meta Quest 3/3s deployment pipeline setup; scope whether prebuilt/purchased environment assets can cover the first demo's needs before committing to custom Unreal level-building; if custom levels are needed, build the Unreal → `.glb` export workflow into the Babylon.js Editor and decide GLB-into-`.babylon` vs. direct runtime loading |
 | [ ] 10/26 | First device build | Get a first build running on the Quest device (even a minimal scene); debug controller input |
 | [ ] 11/2 | Integration sync | Sync with Amanda/Coco on wiring their JSON automation output into the Blueprint Struct |
 | [ ] 11/9 | Early research: behavior trees/NPC AI | Get a head start on Spring's behavior-tree scope — research Unreal's behavior tree/AI system options against what the scene JSON would need to drive |

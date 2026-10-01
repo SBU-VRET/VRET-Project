@@ -38,7 +38,7 @@ would help" work that week, then pick from the menu below.
 
 | Done | Weeks | Likely emphasis |
 |---|---|---|
-| [ ] 9/21 – 10/4 | Research support — documentation/notes now owned by Fahim; assist Jayden's lit review or Amanda/Coco's research tasks during onboarding |
+| [ ] 9/21 – 10/4 | Research support — documentation/notes now owned by Fahim; assist Jayden's lit review or Amanda/Coco's research tasks during onboarding; listen to the voice-line recordings on the shared Google Drive and give input on VRE-29's first-scene framing questions |
 | [ ] 10/5 – 11/15 | QA/playtesting as builds start coming together (Fahim's baseline build, Kevin's first device build) |
 | [ ] 11/16 – 12/7 | Research support for Jayden's literature review and IRB prep, or wrap-up documentation |
 

@@ -1,9 +1,9 @@
-# Amanda Chen — Plan
+# Coco Gao — Plan
 
-**Track:** Scene schema documentation + automation tooling (paired with Coco)
+**Track:** Scene schema documentation + automation tooling (paired with Amanda)
 **Time budget:** VIP 395, 1 credit = 3 hrs/week (1 meeting, 1 independent work, 1 research)
 
-## Role (from kickoff slides, shared with Coco)
+## Role (from kickoff slides, shared with Amanda)
 
 **Tasks**
 - Document the current `scene_01.json` / `models.json` schema so the team has one clear reference
@@ -20,7 +20,7 @@
 
 **Engine target (resolved):** Babylon.js + WebXR is the confirmed deployment pipeline. Unreal Engine is used upstream for scene authoring only, not the runtime — so the automation script should target VRM/VRMA-compatible outputs that feed Babylon.js directly.
 
-### Suggested split with Coco
+### Suggested split with Amanda
 
 Both of you own the automation script together; this split is a starting point, not a fixed assignment — rebalance as needed:
 - **Amanda leads:** schema documentation, Fahim/branch sync
@@ -31,19 +31,19 @@ Both of you own the automation script together; this split is a starting point, 
 | Done | Week of | Focus | Tasks |
 |---|---|---|---|
 | [ ] 9/21 | Onboarding | Get repo access; read VRET GitHub, LAM_Audio2Expression, valid-vrm-avatars repos; read the Drive papers |
-| [ ] 9/28 | Schema docs start | Start documenting the `scene_01.json` / `models.json` schema |
-| [ ] 10/5 | Branch sync | Sync with Fahim on Bennett & Jungu branch history before scoping new tooling |
-| [ ] 10/12 | Schema draft done | Finish first draft of schema documentation |
-| [ ] 10/19 | Automation script scoping | With Coco, define automation script inputs/outputs (avatar list + dialogue script → `scene_XX.json` skeleton) |
+| [ ] 9/28 | Faster-generation research | Start researching tools/techniques for faster model/environment generation (procedural or AI-assisted, vs. building by hand); listen to the voice-line recordings on the shared Google Drive and give input on VRE-29's first-scene framing questions |
+| [ ] 10/5 | Branch sync | Join Amanda's sync with Fahim on Bennett & Jungu branch history before scoping new tooling |
+| [ ] 10/12 | Research + storyline start | Compile faster-generation research findings; start researching choice-based storyline mechanics |
+| [ ] 10/19 | Automation script scoping | With Amanda, define automation script inputs/outputs (avatar list + dialogue script → `scene_XX.json` skeleton) |
 | [ ] 10/26 | Script build | Continue script prototype, targeting VRM/VRMA output for the Babylon.js/WebXR pipeline |
-| [ ] 11/2 | Script build + Jayden sync | Continue script build; sync with Jayden on wiring voice/audio into `speak`/`lipSync` fields |
+| [ ] 11/2 | Script build | Continue script build |
 | [ ] 11/9 | Testing | Test the automation script against at least one real scene; fix bugs |
-| [ ] 11/16 | Wrap research | Wrap up choice-based storyline research into a feasibility write-up for Spring |
+| [ ] 11/16 | Wrap research | Finalize the choice-based storyline research write-up (feasibility + recommended approach for Spring) |
 | [ ] 11/23 | Thanksgiving (reduced) | Light week, buffer/catch-up |
-| [ ] 11/30 | Finalize | Finalize schema documentation v1 (versioned); finalize working automation script demo |
-| [ ] 12/7 | Fall wrap-up | Demo script + schema doc to the team; retro; help scope Spring authoring-tool work |
+| [ ] 11/30 | Finalize | Finalize working automation script demo alongside Amanda's schema doc |
+| [ ] 12/7 | Fall wrap-up | Demo script + research to the team; retro; help scope Spring authoring-tool work |
 
-**Fall exit criteria:** versioned schema doc published, working automation script generating a valid scene file from simple inputs.
+**Fall exit criteria:** working automation script generating a valid scene file from simple inputs, choice-based storyline feasibility write-up delivered.
 
 ## Winter Gap (Dec 10 – Jan 24)
 
@@ -69,25 +69,25 @@ No scheduled work.
 | [ ] 4/26 | Polish | Final polish, bug bash |
 | [ ] 5/3 | Presentation prep | Demo authoring tool + automation pipeline |
 
-**Spring exit criteria:** authoring tool functional end-to-end, automation extended to swap environments/avatars/dialogue at scale, schema v2 documented.
+**Spring exit criteria:** authoring tool functional end-to-end, automation extended to swap environments/avatars/dialogue at scale, choice-based storyline mechanic integrated into the schema.
 
 ## Benchmarks / Definition of Done
 
 ### Fall 2026
-- [ ] Versioned `scene_01.json` / `models.json` schema documentation published
-- [ ] Automation script generates a valid scene file from an avatar list + dialogue script
-- [ ] Choice-based storyline mechanic researched and feasibility documented (Coco-led)
+- [ ] Working automation script generates a valid scene file from an avatar list + dialogue script
+- [ ] Choice-based storyline mechanic researched and feasibility documented
+- [ ] Faster model/environment generation research compiled
 
 ### Spring 2027
 - [ ] Lightweight authoring tool functional end-to-end (UI → valid scene JSON)
 - [ ] Automation extended to swap environments at scale
 - [ ] Automation extended to swap avatars at scale
 - [ ] Automation extended to swap dialogue/voice at scale
-- [ ] Schema v2 documented
+- [ ] Choice-based storyline mechanic integrated into the schema
 
 ## Collaboration Checkpoints
 
-- **Coco:** joint ownership of the automation script and authoring tool
+- **Amanda:** joint ownership of the automation script and authoring tool
 - **Fahim:** repo structure, branch history, validation tooling alignment
 - **Jayden:** `speak`/`lipSync` field integration
 - **Kevin:** Blueprint Struct key alignment once engine target is confirmed
