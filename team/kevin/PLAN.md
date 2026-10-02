@@ -14,6 +14,7 @@
 - Create a Blueprint Struct in Unreal to match keys of scene JSON files, using the JSON Utilities Plugin
 - Integrate the project onto a VR device
 - Work directly with KPC clinicians and clients to understand user needs
+- Weigh in on the design of the trigger-softening menu (siren/bystander-crowd intensity) proposed for VRE-29 — Fahim owns the Babylon.js build of it
 - *(Next semester)* Design behavior trees for NPCs, automated based on scene JSON
 - *(Next semester)* Design Smart Objects for scene interactivity
 

@@ -126,6 +126,7 @@ Team-wide targets — see each person's PLAN.md for the individual breakdown beh
 ## Decisions Already Made
 
 - **Deployment target: Babylon.js + WebXR, not Unreal Engine.** Unreal Engine is used upstream for scene/level authoring and (per Kevin's Spring tasks) NPC behavior tree/Smart Object design, but the pipeline that ships to the Quest device is Babylon.js/WebXR. Amanda/Coco's automation should target this pipeline directly (VRM/VRMA-compatible outputs into Babylon.js), and Kevin's Blueprint Struct/behavior tree work should be understood as content-authoring tooling that feeds that pipeline rather than a parallel runtime.
+- **First scene demo is defined.** A traffic-stop exposure scene (white male cop, Black male victim/user) on Clay Ave, reusing last semester's scene concept — full answer set in [docs/FIRST_SCENE_FRAMING.md](docs/FIRST_SCENE_FRAMING.md) (VRE-29).
 
 ## Risks & Open Items
 
@@ -133,3 +134,4 @@ Team-wide targets — see each person's PLAN.md for the individual breakdown beh
 3. **Spring semester dates and spring break are estimated**, not confirmed against the registrar — revisit in January.
 4. **n=10 realistic patient testing in Fall (per original 11/6 date) is very unlikely** without IRB clearance already in hand; this plan pushes actual testing to Spring and treats Fall's "test subject" language as recruitment/protocol prep instead.
 5. **Meeting notes/wiki upkeep/cross-team action-item tracking moved from Carlos to Fahim** — Carlos isn't currently carrying a standing weekly assignment; Fahim absorbed this into his coordination hours (research hours trimmed to compensate, see Roster table). Revisit if Carlos's availability changes.
+6. **First scene demo (VRE-29) still has open items**: the exposure-scene script isn't written yet (Jayden), it hasn't been reviewed by a psychologist (Jayden), and the scene's intended duration isn't set — depends on that script. See [docs/FIRST_SCENE_FRAMING.md](docs/FIRST_SCENE_FRAMING.md).

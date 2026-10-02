@@ -13,6 +13,7 @@
 - Integrate idle animations for character models — evaluate Text to VRMA (outputs `.vrma` directly) vs. ARDY (NVIDIA research model; needs a `.npz`→BVH→VRMA conversion path via the official `bvh2vrma` tool, plus local GPU inference — lower priority, later work)
 - Standardize the explicit software build process and how data is compiled
 - Develop validation/testing for scene JSON files, character models, animations, and audio before they load into Babylon.js
+- Build the pre-session trigger-softening menu (siren volume, bystander-crowd aggression) for clinician use, per VRE-29 — reads the trigger-intensity fields Amanda/Coco are adding to `scene_XX.json`; Kevin proposed the idea and should weigh in on the design
 - Create technical documentation/tutorials for setting up, building, testing, and running the VRET project locally
 - *(Lower priority, later)* If ARDY is chosen over Text to VRMA for idle animation: write `npz_to_bvh.py` to convert ARDY's joint output into BVH, then feed that into the official `bvh2vrma` tool to get `.vrma` — not blocking current work
 
@@ -33,8 +34,8 @@ Given the largest time budget on the team, this role functions as technical lead
 | [ ] 10/5 | Repo setup + bug isolation | Draft repo structure plan for the new SBU-VRET/VRET-Project repo (folder structure, branch strategy); begin diagnosing the facial animation/audio sync gap — reproduce it, isolate whether it's in Audio2Expression output, blend shape mapping, or Babylon.js playback; check whether the top-level `vrma/` folder has any existing `.vrma` content, and whether `bjse-plugin` is custom or vendored |
 | [ ] 10/12 | Fix + baseline build | Fix or mitigate the sync issue; get a baseline Babylon.js scene loading reliably (existing characters/audio/animations) |
 | [ ] 10/19 | Build standardization | Document the explicit build process; start the technical setup/build documentation draft |
-| [ ] 10/26 | Validation tooling start | Begin validation tooling for scene JSON/models/animations/audio (schema validation before Babylon.js load); coordinate with Amanda/Coco so the validator matches their documented schema |
-| [ ] 11/2 | Validation tooling | Continue validation tooling for scene JSON/models/animations/audio |
+| [ ] 10/26 | Validation tooling start | Begin validation tooling for scene JSON/models/animations/audio (schema validation before Babylon.js load); coordinate with Amanda/Coco so the validator matches their documented schema; start prototyping the pre-session trigger-softening menu (siren volume, bystander-crowd aggression) reading the new scene_XX.json fields |
+| [ ] 11/2 | Validation tooling | Continue validation tooling for scene JSON/models/animations/audio; continue the trigger-softening menu prototype |
 | [ ] 11/9 | Idle animation integration | Prototype + integrate idle animations via Text to VRMA (or note a fallback if incompatible); sync with Kevin on Unreal/Babylon compatibility issues found so far |
 | [ ] 11/16 | Polish + repo hygiene | Continue idle animation polish; start team-wide GitHub cleanup (resolve stale branches, open PRs) |
 | [ ] 11/23 | Thanksgiving (reduced) | Light week — finish GitHub cleanup carried over from 11/16; documentation catch-up |

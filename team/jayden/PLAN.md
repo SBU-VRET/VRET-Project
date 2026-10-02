@@ -11,6 +11,7 @@
 - Research the psychiatric and neurological benefits of treating trauma
 - Understand the technological implications of using VRET
 - Design the scene so the therapy portion can begin once the exposure scene finishes
+- Write the script for the traffic-stop exposure scene itself (per VRE-29) — this is Jayden's own script, not necessarily built from the existing Drive voice recordings
 - Design a novel, strictly therapeutic scene that walks the user through their trauma without re-traumatizing them
 - Collect data on how test subjects felt after treatment (interviews + Likert scale, quantitative and qualitative)
 
@@ -27,8 +28,8 @@
 | [ ] 9/21 | **IRB status + inventory** | **Top priority: find the faculty advisor and get a definitive answer on IRB/ethics approval status — is there a prior-semester process already in motion, or does this start from zero? This determines the entire Spring testing timeline.** Also inventory existing voice files/scene state; draft outreach list of psychologists/psychiatrists (include KPC clinicians Kevin is in contact with); start lit review on psych/neuro benefits of VR exposure therapy |
 | [ ] 9/28 | IRB follow-through + outreach | If IRB isn't started: begin the submission process (protocol description, consent forms, recruitment plan) with the faculty advisor's guidance. Send psychologist outreach emails; continue lit review write-up; listen to the voice-line recordings on the shared Google Drive and give input on VRE-29's first-scene framing questions, especially the narrative/therapeutic framing and script questions |
 | [ ] 10/5 | Therapeutic scene concept | Draft the novel therapeutic-only scene concept — story beats, dialogue needs, what it deliberately avoids showing; follow up with unresponsive psychologists; continue IRB paperwork if in progress; sync with Fahim on how "therapy begins after scene" should be structured in the scene data |
-| [ ] 10/12 | First clinical input | Meet with responding psychologist(s); capture requirements on pacing, triggers to avoid, therapy protocol structure |
-| [ ] 10/19 | Refine | Refine voice files per clinical input if needed; draft full script for the therapeutic-only scene |
+| [ ] 10/12 | First clinical input + exposure script | Meet with responding psychologist(s); capture requirements on pacing, triggers to avoid, therapy protocol structure; write the full script for the traffic-stop exposure scene (Jayden's own, not necessarily based on the existing Drive recordings) |
+| [ ] 10/19 | Refine | Refine voice files to match the new exposure script per clinical input if needed; draft full script for the therapeutic-only scene |
 | [ ] 10/26 | Iterate + instrument design | Iterate therapeutic scene with psychologist feedback; start drafting the post-treatment interview questions and Likert scale instrument (these typically need to be included in the IRB submission itself, so coordinate timing) |
 | [ ] 11/2 | Finalize instrument | Finalize interview/Likert instrument; confirm IRB status/timeline with faculty advisor — determines whether any pilot testing is possible this semester |
 | [ ] 11/9 | Support scene integration | Support lip-sync/dialogue testing with Fahim; write up the technological-implications section (how tech choices affect therapy delivery) |
