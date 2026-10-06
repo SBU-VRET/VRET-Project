@@ -7,7 +7,7 @@ the clearest signal of what's already been recorded and what the scene needs
 to work around.
 
 **Still needs an answer or more information:**
-- **Resolved (per 10/2 meeting):** the immediate priority is a basic demo built on top of last semester's existing `babylon-clay-scene` demo, ASAP — even a bare "hi/bye" interaction is enough for now. This scene's full scope (casting, softening menu, ambient crowd, etc.) is the eventual content target once the tool-chain is stitched together, not a blocker on the basic demo.
+- **Two distinct demos (per 10/2 meeting) — don't conflate them.** The **mock demo** (immediate, ASAP priority) is a deliberate workflow dry run: build end-to-end on top of last semester's existing `babylon-clay-scene`, content as bare as a "hi/bye" interaction, purely so the team fully understands the tool-chain before committing to the real build. This document's scene (full casting, softening menu, ambient crowd, etc.) is the **actual demo**, built afterward with that understanding in hand — it is not blocked on the mock demo, and the mock demo is not a scaled-down version of it.
 - **Q7** — script isn't established yet.
 - **Q9** — script hasn't been reviewed by a psychologist yet.
 - **Q11** — duration isn't set; depends on a finalized script/voice-line runtime that doesn't exist yet.

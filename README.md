@@ -74,7 +74,7 @@ subteams' weekly plans are paced against their own task lists, not this timeline
 | [ ] 10/26 – 11/15 | Integration: KPC clinician input, validation tooling, first Quest deployment |
 | [ ] 11/16 – 12/7 | Stabilize + wrap: Thanksgiving week is reduced-load; finalize Fall deliverables, retro, scope Spring |
 
-**Fall exit criteria:** reliable Babylon.js build loading the existing scene/characters/audio/animations, documented schema + validation tooling, a working automation script slice, a deployable Quest 3/3s build, and a finalized therapeutic scene draft reviewed by psychologists.
+**Fall exit criteria:** **mock demo** — reliable Babylon.js build loading the existing scene/characters/audio/animations, a deployable Quest 3/3s build (both using last semester's existing content, proving the tool-chain works); **tooling** — documented schema + validation tooling, a working automation script slice; **real demo (VRE-29) prep** — a finalized therapeutic scene draft reviewed by psychologists. (See Jayden's PLAN.md and `docs/FIRST_SCENE_FRAMING.md` for the fuller real-demo exit criteria, including the exposure-scene script.)
 
 ### Winter Gap (Dec 10, 2026 – Jan 24, 2027)
 
@@ -128,6 +128,7 @@ Team-wide targets — see each person's PLAN.md for the individual breakdown beh
 - **Deployment target: Babylon.js + WebXR, not Unreal Engine.** Unreal Engine is used upstream for scene/level authoring and (per Kevin's Spring tasks) NPC behavior tree/Smart Object design, but the pipeline that ships to the Quest device is Babylon.js/WebXR. Amanda/Coco's automation should target this pipeline directly (VRM/VRMA-compatible outputs into Babylon.js), and Kevin's Blueprint Struct/behavior tree work should be understood as content-authoring tooling that feeds that pipeline rather than a parallel runtime.
 - **First scene demo is defined.** A traffic-stop exposure scene (white male cop, Black male victim/user) on Clay Ave, reusing last semester's scene concept — full answer set in [docs/FIRST_SCENE_FRAMING.md](docs/FIRST_SCENE_FRAMING.md) (VRE-29).
 - **Environment/object `.glb` assets load individually at runtime, not pre-combined via the Babylon.js Editor.** Scenes change as a whole and the team wants future asset-level manipulation (picking which objects go into a scene), which needs each asset swappable independently. Affects Kevin's export workflow, Amanda/Coco's schema, and Fahim's `App.ts` runtime work — see `docs/TECH_PIPELINE.md` Stage 2.
+- **Kevin got a working demo live on GitHub Pages**: [kevexperiences.github.io/PersonalScene](https://kevexperiences.github.io/PersonalScene/). This surfaced a real repo-structure gap — `models/`/`vrma/` need to live inside `babylon-clay-scene/` with local paths for static hosting to work, instead of the current sibling-folder + dev-server-middleware setup. Folded into Fahim's repo structure plan (week of 10/5) — see `docs/TECH_PIPELINE.md` Stage 1.
 
 ## Risks & Open Items
 
@@ -136,4 +137,22 @@ Team-wide targets — see each person's PLAN.md for the individual breakdown beh
 4. **n=10 realistic patient testing in Fall (per original 11/6 date) is very unlikely** without IRB clearance already in hand; this plan pushes actual testing to Spring and treats Fall's "test subject" language as recruitment/protocol prep instead.
 5. **Meeting notes/wiki upkeep/cross-team action-item tracking moved from Carlos to Fahim** — Carlos isn't currently carrying a standing weekly assignment; Fahim absorbed this into his coordination hours (research hours trimmed to compensate, see Roster table). Revisit if Carlos's availability changes.
 6. **First scene demo (VRE-29) still has open items**: the exposure-scene script isn't written yet (Jayden), it hasn't been reviewed by a psychologist (Jayden), and the scene's intended duration isn't set — depends on that script. See [docs/FIRST_SCENE_FRAMING.md](docs/FIRST_SCENE_FRAMING.md).
-7. **Resolved: immediate priority is a basic demo, built on top of last semester's existing `babylon-clay-scene` demo, ASAP.** Even a bare "hi/bye" interaction is enough for now — the real priority is getting the full tool-chain stitched into one working pipeline. VRE-29's fully-cast traffic-stop scene is the eventual content target, not something this basic demo needs to wait on. Everyone has a part in this near-term push (see each person's current-week tasks).
+7. **There are two distinct demos — don't conflate them.** The **mock demo** (immediate, ASAP priority) is a deliberate workflow dry run: build end-to-end on top of last semester's existing `babylon-clay-scene`, content as bare as a "hi/bye" interaction, purely so the team fully understands the tool-chain before committing to the real build. The **actual demo** is VRE-29's fully-cast traffic-stop scene — the real semester end goal — built afterward with that understanding in hand. Everyone has a part in the mock-demo push this week (see each person's current-week tasks).
+
+## Mock Demo — Completion Checklist
+
+The concrete, critical-path steps that actually make the mock demo *done* (deployed, working, pipeline proven) — not everything everyone's doing this week, just what's load-bearing for this specific goal:
+
+| Done | Step | Owner | Due |
+|---|---|---|---|
+| [ ] | Restructure the repo — move `models/`/`vrma/` inside `babylon-clay-scene/`, fix all paths to be local (per Kevin's GitHub Pages finding) | Fahim | 10/5 |
+| [ ] | Diagnose + fix the facial-animation/audio sync gap (including the WAV-combining script) | Fahim | 10/12 |
+| [ ] | Baseline Babylon.js build loading reliably (existing scene/characters/audio/animations) | Fahim | 10/12 |
+| [ ] | Confirm existing demo content (voice lines, scene) is clinically fine to show as-is | Jayden | 10/12 |
+| [ ] | Verify the fix with the team at Friday sync, rather than self-certifying alone | Fahim | 10/12 |
+| [ ] | Get the restructured build deployed and viewable (web build at minimum, following Kevin's own GitHub Pages precedent) — confirm as soon as Fahim's restructure lands, don't wait for the full device-build week | Kevin | 10/12 |
+| [ ] | Full Quest 3/3s device build (controllers, comfort, tracking) | Kevin | 10/26 |
+
+**Not on this critical path** (valuable, but doesn't block the mock demo from being done): Amanda/Coco's schema documentation and automation-script work document and build tooling *around* the existing demo's files — they don't change whether the mock demo itself runs. Kevin's Blueprint Struct/Unreal work is for the *real* demo's future custom-level pipeline, not the mock demo, which reuses the existing environment and never touches Unreal.
+
+**Resolved:** the sync fix gets verified with the whole team at Friday sync rather than Fahim self-certifying alone.

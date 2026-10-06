@@ -18,7 +18,7 @@
 - *(Next semester)* Design behavior trees for NPCs, automated based on scene JSON
 - *(Next semester)* Design Smart Objects for scene interactivity
 
-**Realistic Achievement:** a deployable Babylon VR experience on Meta Quest 3/3s.
+**Realistic Achievement:** a deployable Babylon VR experience on Meta Quest 3/3s — this Fall, that's the mock demo (last semester's existing content, proving deployment works), not VRE-29's real scene content.
 
 **Collaboration:** support VR implementation for controllers; with Coco and Amanda, integrate their JSON file automation into the Blueprint Struct in Unreal Engine.
 
@@ -34,9 +34,9 @@
 |---|---|---|---|
 | [ ] 9/21 | Environment setup | Set up local Unreal + Babylon dev environments; identify compatibility gaps between the two |
 | [ ] 9/28 | Blueprint Struct start | Begin Blueprint Struct design in Unreal mirroring scene JSON keys; research/install the JSON Utilities Plugin; listen to the voice-line recordings on the shared Google Drive and give input on VRE-29's first-scene framing questions |
-| [ ] 10/5 | Blueprint Struct continues | Continue Blueprint Struct build; test loading a sample scene JSON into Unreal (use last semester's existing `babylon-clay-scene` demo's actual scene.json — this work is part of the team's ASAP basic-demo push, building on that existing demo rather than new content) |
-| [ ] 10/12 | Clinician input | Meet with KPC clinicians and clients to gather user-needs input (device comfort, controller needs, session length) |
-| [ ] 10/19 | Deployment setup | Incorporate clinician/client feedback into the VR integration plan; begin Meta Quest 3/3s deployment pipeline setup, including research into headset scanning and other deployment approaches (per 10/2 meeting); scope whether prebuilt/purchased environment assets can cover the first demo's needs before committing to custom Unreal level-building; if custom levels are needed, build the Unreal → `.glb` export workflow, producing per-asset `.glb` files for runtime loading (decided — not pre-combined via the Editor) |
+| [ ] 10/5 | Blueprint Struct continues | Continue Blueprint Struct build; test loading a sample scene JSON into Unreal (real-demo pipeline prep — the Unreal/Blueprint Struct path isn't on the mock demo's critical path, since the mock demo reuses the existing environment and never touches Unreal) |
+| [ ] 10/12 | Clinician input + mock-demo deploy check | Meet with KPC clinicians and clients to gather user-needs input (device comfort, controller needs, session length); once Fahim's repo restructure lands, verify the mock demo (`babylon-clay-scene`) actually deploys and runs — a web build at minimum, following your own GitHub Pages precedent — don't wait for the full device-build week to confirm this |
+| [ ] 10/19 | Deployment setup | Incorporate clinician/client feedback into the VR integration plan; begin Meta Quest 3/3s deployment pipeline setup, including research into headset scanning and other deployment approaches (per 10/2 meeting); scope whether prebuilt/purchased environment assets can cover the real demo's (VRE-29's Clay Ave street scene) needs before committing to custom Unreal level-building — not relevant to the mock demo, which reuses last semester's existing environment as-is; if custom levels are needed, build the Unreal → `.glb` export workflow, producing per-asset `.glb` files for runtime loading (decided — not pre-combined via the Editor) |
 | [ ] 10/26 | First device build | Get a first build running on the Quest device (even a minimal scene); debug controller input |
 | [ ] 11/2 | Integration sync | Sync with Amanda/Coco on wiring their JSON automation output into the Blueprint Struct |
 | [ ] 11/9 | Early research: behavior trees/NPC AI | Get a head start on Spring's behavior-tree scope — research Unreal's behavior tree/AI system options against what the scene JSON would need to drive |

@@ -32,7 +32,7 @@ Both of you own the automation script together; this split is a starting point, 
 |---|---|---|---|
 | [ ] 9/21 | Onboarding | Get repo access; read VRET GitHub, LAM_Audio2Expression, valid-vrm-avatars repos; read the Drive papers |
 | [ ] 9/28 | Faster-generation research | Start researching tools/techniques for faster model/environment generation (procedural or AI-assisted, vs. building by hand); listen to the voice-line recordings on the shared Google Drive and give input on VRE-29's first-scene framing questions |
-| [ ] 10/5 | Branch sync | Join Amanda's sync with Fahim on Bennett & Jungu branch history before scoping new tooling (ties into the team's ASAP basic-demo push, building on last semester's existing `babylon-clay-scene` demo) |
+| [ ] 10/5 | Branch sync | Join Amanda's sync with Fahim on Bennett & Jungu branch history before scoping new tooling (background/tooling work, not on the mock demo's own critical path — see README's Mock Demo Completion Checklist) |
 | [ ] 10/12 | Research + storyline start | Compile faster-generation research findings; start researching choice-based storyline mechanics |
 | [ ] 10/19 | Automation script scoping | With Amanda, define automation script inputs/outputs (avatar list + dialogue script → `scene_XX.json` skeleton) |
 | [ ] 10/26 | Script build | Continue script prototype, targeting VRM/VRMA output for the Babylon.js/WebXR pipeline |

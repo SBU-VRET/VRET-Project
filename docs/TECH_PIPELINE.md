@@ -53,6 +53,8 @@ The character avatars are pulled from [valid-vrm-avatars](https://github.com/TLT
 
 These VRM files sit as a **sibling** of `babylon-clay-scene/`, not inside it — a custom Vite dev-server plugin in `vite.config.ts` reaches up one directory to serve `/models/...` and `/vrma/...` at request time.
 
+**This breaks on static hosting.** Kevin got a working demo live on GitHub Pages ([kevexperiences.github.io/PersonalScene](https://kevexperiences.github.io/PersonalScene/)) and had to move `models/` *inside* `babylon-clay-scene/` and make every scene/avatar/animation path local to the project folder — there's no dev server on GitHub Pages to run the sibling-folder middleware trick. The team's actual repo still has `models/` as a sibling at the root, so this needs to be part of Fahim's repo structure plan, not just Kevin's personal deployment.
+
 ## 2. Environment authoring
 
 ```mermaid
