@@ -7,6 +7,7 @@ the clearest signal of what's already been recorded and what the scene needs
 to work around.
 
 **Still needs an answer or more information:**
+- **Resolved (per 10/2 meeting):** the immediate priority is a basic demo built on top of last semester's existing `babylon-clay-scene` demo, ASAP — even a bare "hi/bye" interaction is enough for now. This scene's full scope (casting, softening menu, ambient crowd, etc.) is the eventual content target once the tool-chain is stitched together, not a blocker on the basic demo.
 - **Q7** — script isn't established yet.
 - **Q9** — script hasn't been reviewed by a psychologist yet.
 - **Q11** — duration isn't set; depends on a finalized script/voice-line runtime that doesn't exist yet.
@@ -55,7 +56,7 @@ to work around.
 ## Objects
 
 12. What objects are necessary in the scene?
-    - **Answer:** Parked cars, trees, rowhouses, the police car (with siren audio), and optionally a bystander crowd — plus sound effects like window-knocking, and ambient noise like wind or city sounds.
+    - **Answer:** Parked cars, trees, rowhouses, the police car (with siren audio), and optionally a bystander crowd — plus sound effects like window-knocking, and ambient noise like wind or city sounds. Per the 10/2 meeting, add basic environmental activity for realism: cars should move occasionally, and people should walk around occasionally.
 
 13. Which objects are just background vs. need to be interactive?
     - **Answer:** Only the siren and bystander crowd need to be adjustable/interactive; everything else (cars, trees, buildings) is static background.

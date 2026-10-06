@@ -32,8 +32,8 @@ Both of you own the automation script together; this split is a starting point, 
 |---|---|---|---|
 | [ ] 9/21 | Onboarding | Get repo access; read VRET GitHub, LAM_Audio2Expression, valid-vrm-avatars repos; read the Drive papers |
 | [ ] 9/28 | Schema docs start | Start documenting the `scene_01.json` / `models.json` schema; include [valid-vrm-avatars](https://github.com/TLTMedia/valid-vrm-avatars) as the actual avatar source and its `{Ethnicity}_{Sex}_{BodyType}_{Outfit}.vrm` naming convention (see `docs/TECH_PIPELINE.md` Stage 1); listen to the voice-line recordings on the shared Google Drive and give input on VRE-29's first-scene framing questions |
-| [ ] 10/5 | Branch sync | Sync with Fahim on Bennett & Jungu branch history before scoping new tooling |
-| [ ] 10/12 | Schema draft done | Finish first draft of schema documentation, including trigger-intensity fields (siren volume, bystander-crowd aggression level) for the softening menu decided in VRE-29, and the Black-male/white-male casting as the first concrete valid-vrm-avatars example |
+| [ ] 10/5 | Branch sync | Sync with Fahim on Bennett & Jungu branch history before scoping new tooling (this schema work documents last semester's existing `babylon-clay-scene` demo, which is the team's ASAP basic-demo push — not new content) |
+| [ ] 10/12 | Schema draft done | Finish first draft of schema documentation, including trigger-intensity fields (siren volume, bystander-crowd aggression level) for the softening menu decided in VRE-29, the Black-male/white-male casting as the first concrete valid-vrm-avatars example, and a field for referencing environment/object `.glb` assets by path (decided: loaded individually at runtime, not pre-combined — see `docs/TECH_PIPELINE.md` Stage 2) |
 | [ ] 10/19 | Automation script scoping | With Coco, define automation script inputs/outputs (avatar list + dialogue script → `scene_XX.json` skeleton) |
 | [ ] 10/26 | Script build | Continue script prototype, targeting VRM/VRMA output for the Babylon.js/WebXR pipeline |
 | [ ] 11/2 | Script build + Jayden sync | Continue script build; sync with Jayden on wiring voice/audio into `speak`/`lipSync` fields |

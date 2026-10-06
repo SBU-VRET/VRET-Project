@@ -13,8 +13,8 @@ flowchart LR
     Library["valid-vrm-avatars"] --> VRM
     Unreal -->|"if needed"| GLB
     Prebuilt -->|"if available"| GLB
-    GLB --> BJSE
     BJSE --> BabylonScene
+    GLB --> SceneJSON
     Script --> QwenTTS --> WAV
     WAV --> FaceTool["Audio2Face / LAM"] --> AnimJSON
     VRM --> SceneJSON
@@ -57,20 +57,23 @@ These VRM files sit as a **sibling** of `babylon-clay-scene/`, not inside it —
 
 ```mermaid
 flowchart LR
-    Unreal["Unreal Engine<br/>(if needed)<br/>custom levels/backgrounds"] -->|"exports .glb"| GLB["Exported .glb"]
+    Unreal["Unreal Engine<br/>(if needed)<br/>custom levels/objects"] -->|"exports .glb"| GLB["Exported .glb<br/>(per asset)"]
     Prebuilt["Prebuilt/purchased<br/>assets (online)<br/>(if a good fit exists)"] -->|"already .glb"| GLB
-    GLB -->|"imported into"| BJSE["Babylon.js Editor<br/>(bjse-project)<br/>final scene assembly"]
-    BJSE -->|exports| BabylonScene[".babylon scene file<br/>public/scene/example.babylon"]
+    GLB -->|"referenced by path"| SceneJSON["scene_XX.json"]
+    SceneJSON -->|"ImportMeshAsync()<br/>at runtime"| AppTS["App.ts"]
+    BJSE["Babylon.js Editor<br/>(bjse-project)<br/>base scene assembly"] -->|exports| BabylonScene[".babylon scene file<br/>public/scene/example.babylon"]
 
     classDef tool fill:#6c9bd1,stroke:#2c4a6b,stroke-width:2px,color:#fff;
     classDef artifact fill:#fbe7a1,stroke:#a87f1a,stroke-width:1px,color:#000;
-    class Unreal,BJSE tool
-    class GLB,Prebuilt,BabylonScene artifact
+    class Unreal,BJSE,AppTS tool
+    class GLB,Prebuilt,BabylonScene,SceneJSON artifact
 ```
 
-Unreal is **conditional, not mandatory** — it's for building custom levels/backgrounds when nothing suitable already exists. If a prebuilt/purchased environment asset online is a good enough fit, that gets used directly instead, skipping Unreal authoring entirely. Either path converges on the same `.glb` handoff into the Babylon.js Editor for final scene assembly before export as the `.babylon` file the runtime loads. The existing demo scene was built entirely in the Babylon.js Editor with no Unreal or external asset content — this GLB handoff is a gap to fill either way, not something already working (see Open Questions).
+Unreal is **conditional, not mandatory** — it's for building custom levels/objects when nothing suitable already exists. If a prebuilt/purchased asset online is a good enough fit, that gets used directly instead, skipping Unreal authoring entirely. Either path produces a `.glb` per asset (environment or individual object).
 
-One point in GLB's favor: `App.ts` already imports `@babylonjs/loaders/glTF`, so the runtime can load `.glb`/`.gltf` natively. Worth deciding whether Unreal's GLB export always gets pre-combined into the `.babylon` file via the Editor, or whether it could instead be loaded directly at runtime alongside it — see Open Questions.
+**Decided: these `.glb` assets are referenced by path in `scene_XX.json` and loaded directly at runtime (`App.ts`), not pre-combined into the `.babylon` file via the Editor.** `App.ts` already imports `@babylonjs/loaders/glTF`, so the runtime can load `.glb`/`.gltf` natively. This was chosen over pre-combining because scenes change as a whole (not just the background), and the team wants future asset-level manipulation — picking which objects go into a given scene — which needs each asset swappable independently rather than baked into one static file. The Babylon.js Editor still handles base scene assembly (the existing demo's `.babylon` file), separately from this per-asset runtime loading. This handoff isn't built yet — see Open Questions.
+
+**Tradeoff to watch:** loading N separate `.glb` files costs more than one pre-combined file — more network round-trips, more per-asset parse overhead, and more draw calls at render time (a combined file is typically mesh-merged by the Editor; separately-loaded assets aren't, unless done explicitly). Worth mitigating with parallel loading (`Promise.all` over the `ImportMeshAsync` calls, not sequential), Draco/KTX2-compressed exports, and modest per-object poly/texture budgets — especially since this ships to standalone Quest hardware, not desktop. Part of Fahim's "noting/adjusting for performance gaps" task above.
 
 ## 3. Voice generation
 
@@ -110,12 +113,13 @@ flowchart LR
     VRM["VRM file"] -->|"avatar: '../models/...'"| SceneJSON["scene.json / scene2.json"]
     RuntimeJSON["animation JSON"] -->|"clip.animation"| SceneJSON
     WAV["audio/*.wav"] -->|"clip.audio"| SceneJSON
+    GLB["Environment/object<br/>.glb files"] -->|"referenced by path"| SceneJSON
 
     classDef artifact fill:#fbe7a1,stroke:#a87f1a,stroke-width:1px,color:#000;
-    class VRM,SceneJSON,RuntimeJSON,WAV artifact
+    class VRM,SceneJSON,RuntimeJSON,WAV,GLB artifact
 ```
 
-`scene.json`/`scene2.json` tie everything together per character: which VRM to load, idle/breathing parameters, and an ordered list of clips pairing one animation JSON with one audio WAV.
+`scene.json`/`scene2.json` tie everything together per character: which VRM to load, idle/breathing parameters, and an ordered list of clips pairing one animation JSON with one audio WAV. It's also where environment/object `.glb` assets get referenced by path (see Stage 2) — not yet implemented, but this is the intended location so individual assets can be picked per scene.
 
 ## 6. Runtime
 
@@ -167,12 +171,9 @@ A separate animation track from Stage 4/6 — VRMA drives the avatar's *skeleton
 **Option B — [ARDY](https://github.com/nv-tlabs/ardy)** (NVIDIA + ETH Zürich, SIGGRAPH 2026). A diffusion model that generates new motion in real-time from a text prompt plus optional kinematic constraints (root path/waypoints, keyframes, sparse joint positions) — it synthesizes motion, it doesn't select from a preset library. Output is `.npz` (world-space joint positions, local/global rotations, root position, foot contacts) across three skeleton options (a generic "Core" humanoid, Unitree G1 robot, or SOMA body model — "coming soon"). No VRM/VRMA export directly, but a usable path exists: **[bvh2vrma](https://github.com/vrm-c/bvh2vrma)** — the official VRM Consortium tool for converting BVH motion capture into VRMA — covers the second half of the job. That leaves one real gap: a small `npz_to_bvh.py` script to turn ARDY's joint data into BVH, which `bvh2vrma` can then convert to `.vrma`. Comparable in scope to `csv_converter.py`/`parse_a2e.py` in Stage 4, not a from-scratch VRMA/glTF exporter. Also requires local GPU inference for ARDY itself (Python 3.10+, PyTorch 2.4+, CUDA, RTX 4090 recommended).
 
 ## Open questions / TODO
-- [ ] **Unreal/prebuilt → GLB → Babylon.js Editor handoff doesn't exist yet.** Format is decided (`.glb`), but there's no converter/import workflow built or documented yet — true whether the GLB comes from Unreal or a purchased/prebuilt asset. Owner: Kevin, per his Unreal/Babylon compatibility task.
-- [ ] Check whether prebuilt environment assets (asset stores, Sketchfab, etc.) can cover enough scenes to skip custom Unreal work for the first demo — worth doing before investing in the Unreal pipeline
-- [ ] Decide: does the GLB always get pre-combined into the `.babylon` file via the Babylon.js Editor, or can it be loaded directly at runtime (the `@babylonjs/loaders/glTF` import in `App.ts` means the runtime already supports this)?
+- [ ] **Document the WAV-combining step (per 10/2 meeting).** There's a Python script (built with Gemini's help) that stitches multiple voice-line WAV files into one combined audio file before they reach Audio2Face/LAM — Stage 3 above doesn't reflect this yet. Likely tied to the facial-animation/audio sync gap Fahim's diagnosing.
+- [ ] **Diagram needs a revision pass (per 10/2 meeting).** Several changes agreed on — QwenTTS call detail, a mood/personality field, a VRET-prefixed file-naming convention, clarifying the prebuilt-assets section, the BJSE vs. Babylon Engine relationship, and marking per-section ownership. Not yet applied; see the 10/2 meeting notes for the full list.
+- [ ] **Build runtime `.glb` loading in `App.ts`.** Decided: environment/object assets load individually at runtime (not pre-combined into `.babylon` via the Editor), referenced by path in `scene_XX.json` — see Stage 2. Not implemented yet.
 - [ ] Clarify whether Unreal's export also needs to carry behavior-tree/Smart Object data (Kevin's Spring task), or whether that's a separate pipeline from the background/geometry export
-- [ ] **Validate Text to VRMA vs. ARDY** as the idle-animation source (Fahim's task) and actually wire `applyVRMA()` into `App.ts` for at least one character
-- [ ] **Write `npz_to_bvh.py`** if ARDY is chosen — converts ARDY's joint data to BVH, then feed that into [bvh2vrma](https://github.com/vrm-c/bvh2vrma) (official, already exists) to get `.vrma`. Note bvh2vrma's own README doesn't guarantee results for every BVH file, so the joint-name/hierarchy mapping needs real testing, not just a format match on paper. **Lower priority / later** — not blocking current work.
+- [ ] **Pick Text to VRMA or ARDY** as the idle-animation source (research done — see Stage 7 above) and wire `applyVRMA()` into `App.ts` for at least one character
 - [ ] Check whether the team has access to an RTX 4090 (or equivalent) if ARDY is the chosen path — it's a local-inference research model, not a lightweight tool
-- [ ] Find out if the top-level `vrma/` folder (referenced by the same Vite middleware as `models/`) has any existing `.vrma` content worth testing `applyVRMA()` against, or if it's currently empty/reserved
-- [ ] Check whether `bjse-plugin` is a custom Babylon Editor plugin built for this project, or a vendored third-party tool
