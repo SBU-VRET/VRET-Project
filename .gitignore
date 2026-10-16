@@ -5,3 +5,6 @@ dist/
 Thumbs.db
 temp/
 docs/RECENT_EDITS.md
+docs/FACIAL_ANIM_REGEN_NOTES.md
+babylon-clay-scene/public/models/
+valid-vrm-avatars/
