@@ -18,16 +18,19 @@ constructs an `A2FAvatar` and calls `loadManifest(...)`:
 
 ```ts
 const avatar = new A2FAvatar(scene);
-await avatar.loadManifest('../scene3.json');
+await avatar.loadManifest(`${import.meta.env.BASE_URL}scene.json`);
 
 const secondCharacter = new A2FAvatar(scene);
-await secondCharacter.loadManifest('../scene2.json');
+await secondCharacter.loadManifest(`${import.meta.env.BASE_URL}scene2.json`);
 ```
 
 Each manifest describes **one character** and the sequence of animation clips
-it will play. Two avatars = two manifests. The path is fetched relative to the
-served page (the Vite dev server serves `/scene/...` as the page root, so
-`../scene3.json` resolves to the project-root `scene3.json`).
+it will play. Two avatars = two manifests. Manifests live in `public/` (as
+`public/scene.json`, `public/scene2.json`), not the project root — anything
+fetched at runtime has to be under `public/` or it won't exist in a production
+build. `import.meta.env.BASE_URL` resolves to `/` in dev and to the deployed
+site's base path in production (e.g. `/VRET-Project/` on GitHub Pages), so the
+fetch works correctly in both.
 
 `A2FAvatar.loadManifest(...)` ([A2FAvatar.js:125](A2FAvatar.js)) does the
 following:
@@ -266,7 +269,7 @@ useful when diffing against a new VRM.
    - LAM Audio2Expression — produces a JSON.
 
 2. **Drop your input audio file** somewhere the dev server can serve it.
-   Convention here is `audio/<name>.wav` at project root.
+   Convention here is `public/audio/<name>.wav`.
 
 3. **Run the tool** on the audio file using its own CLI/UI to produce one of:
    - `animation_frames.csv` (Audio2Face-3D), or
@@ -274,22 +277,26 @@ useful when diffing against a new VRM.
 
 4. **Convert to the runtime format.**
 
+   The output has to land in `public/animations/`, not `animations/` — only
+   files under `public/` are servable at runtime (`animations/` is for the
+   scripts and raw/intermediate conversion output only, see [Structure](README.md#structure)).
+
    For A2F-3D:
    ```powershell
    python animations\csv_converter.py path\to\animation_frames.csv `
-     -o animations\my_clip_frames.json --fps 30
+     -o public\animations\my_clip_frames.json --fps 30
    ```
 
    For LAM-A2E (rename or edit the script paths first):
    ```powershell
    cd animations
    python parse_a2e.py
-   # then rename model_animation.json → my_clip_frames.json
+   # then move+rename: model_animation.json → public/animations/my_clip_frames.json
    ```
 
 5. **Add a clip entry to your scene manifest.** Either edit
-   [scene.json](scene.json) (or `scene2.json`, `scene3.json`) directly, or
-   create a new manifest. Example:
+   [public/scene.json](public/scene.json) (or `public/scene2.json`) directly,
+   or create a new manifest under `public/`. Example:
 
    ```json
    {
@@ -300,11 +307,15 @@ useful when diffing against a new VRM.
    }
    ```
 
+   These paths are relative to the manifest's own location (`public/`), so
+   they resolve to `public/animations/...` and `public/audio/...` without
+   needing a `public/` prefix inside the manifest itself.
+
 6. **Point an avatar at the manifest** in [src/App.ts](src/App.ts):
 
    ```ts
    const avatar = new A2FAvatar(scene);
-   await avatar.loadManifest('../my_scene.json');
+   await avatar.loadManifest(`${import.meta.env.BASE_URL}my_scene.json`);
    avatar.rootNode.position = new Vector3(x, y, z);
    avatar.rootNode.rotation = new Vector3(0, yaw, 0);
    avatar.rootNode.scaling  = new Vector3(175, 175, 175); // cm scene, m VRM
@@ -322,9 +333,14 @@ useful when diffing against a new VRM.
 
 ### Path conventions used by the existing manifests
 
-- VRMs live in `public/models/<race>/...` (served directly by Vite, both dev and production).
-- Converted animation JSONs live in `animations/`.
-- Audio files live in `audio/`.
+- VRMs live in `public/models/<race>/...`.
+- Manifests (`scene.json`, `scene2.json`) live in `public/`.
+- Final, servable animation JSONs live in `public/animations/`. The converter
+  scripts and raw/intermediate output (`.csv`, non-final `.json`) stay in the
+  top-level `animations/`, which isn't served.
+- Audio files live in `public/audio/`.
+- Everything above is served directly by Vite, both dev and production,
+  because it's under `public/`.
 - Manifest URLs are resolved relative to the served page root (Vite serves
   `dist/scene` content, so `../scene3.json` walks up to the project root
   manifest).

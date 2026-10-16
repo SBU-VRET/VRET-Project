@@ -157,10 +157,10 @@ export class App {
 		try {
 			console.log('[App] Loading avatars...');
 			avatar = new A2FAvatar(this.scene);
-			await avatar.loadManifest('../scene.json');
+			await avatar.loadManifest(`${import.meta.env.BASE_URL}scene.json`);
 
 			secondCharacter = new A2FAvatar(this.scene);
-			await secondCharacter.loadManifest('../scene2.json');
+			await secondCharacter.loadManifest(`${import.meta.env.BASE_URL}scene2.json`);
 
 			console.log('[App] Avatar loaded. rootNode:', avatar.rootNode?.name,
 				'faceMesh:', avatar.faceMesh?.name, 'clips:', avatar.clips.length);
