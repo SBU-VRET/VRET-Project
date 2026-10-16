@@ -1,5 +1,5 @@
 {
-    "avatar": "../models/Hispanic/Hispanic_M_1_Milit.vrm",
+    "avatar": "models/Hispanic/Hispanic_M_1_Milit.vrm",
     "idle": {
         "blinkIntervalMin": 2.0,
         "blinkIntervalMax": 5.0,

@@ -10,7 +10,7 @@ This README is a living overview of the folder — extend it as new files/folder
 npm install
 npm run dev
 ```
-Opens at `http://localhost:3000`. Requires the sibling `../models/` folder (VRM avatar files) to exist one directory up — see [Structure](#structure) below.
+Opens at `http://localhost:3000`.
 
 ## Structure
 
@@ -23,7 +23,7 @@ Opens at `http://localhost:3000`. Requires the sibling `../models/` folder (VRM 
 | `animations/` | Converted animation data (`*_frames.json`) plus the two converter scripts — see [Animation converters](#animation-converters) |
 | `audio/` | Voice line `.wav` files referenced by the scene manifests |
 | `public/scene/` | Base environment scene exported from the Babylon editor (`example.babylon` + texture/env assets) |
-| `../models/` (parent dir, **not** inside this folder) | VRM avatar files, served via a custom Vite dev-server middleware in `vite.config.ts` that reaches one directory up |
+| `public/models/` | VRM avatar files, served directly by Vite (both dev and production) since they live under `public/` |
 
 *(TODO: expand this table as more of the pipeline gets ported in — e.g. `public/scene/assets/`, `vite.config.ts` plugin details, WebXR controls.)*
 

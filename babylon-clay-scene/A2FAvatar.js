@@ -239,8 +239,13 @@ export class A2FAvatar {
 
     const teethName = TEETH_MAP[name];
     if (teethName) {
-      const td = this.teethDownMap.get(teethName);
-      const tu = this.teethUpMap.get(teethName);
+      // Some valid-vrm-avatars models export teeth morph target names with the
+      // "h_teeth." prefix, some without it (same shapes, inconsistent naming
+      // from the batch conversion — see docs/FACIAL_ANIM_REGEN_NOTES.md).
+      // Try both so either convention works.
+      const bareName = teethName.startsWith('h_teeth.') ? teethName.slice('h_teeth.'.length) : teethName;
+      const td = this.teethDownMap.get(teethName) || this.teethDownMap.get(bareName);
+      const tu = this.teethUpMap.get(teethName) || this.teethUpMap.get(bareName);
       if (td) td.influence = value;
       if (tu) tu.influence = value;
     }

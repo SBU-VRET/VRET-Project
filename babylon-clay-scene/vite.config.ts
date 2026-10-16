@@ -1,30 +1,17 @@
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
-import path from 'path';
-import fs from 'fs';
 
 export default defineConfig({
   plugins: [
     tailwindcss(),
-    {
-      name: 'serve-parent-models',
-      configureServer(server) {
-        server.middlewares.use((req, res, next) => {
-          if (req.url?.startsWith('/models/') || req.url?.startsWith('/vrma/')) {
-            const filePath = path.resolve(__dirname, '..', req.url.slice(1));
-            if (fs.existsSync(filePath)) {
-              res.setHeader('Content-Type', 'application/octet-stream');
-              fs.createReadStream(filePath).pipe(res);
-              return;
-            }
-          }
-          next();
-        });
-      },
-    },
   ],
   server: {
     port: 3000,
+    watch: {
+      // public/models/ holds the full valid-vrm-avatars library (~13GB, 199 files) —
+      // static assets that never change during dev, no reason to watch them.
+      ignored: ['**/public/models/**'],
+    },
   },
   optimizeDeps: {
     exclude: ["@babylonjs/havok"],
@@ -32,4 +19,4 @@ export default defineConfig({
   build: {
     target: 'esnext',
   },
-}); 
+});
