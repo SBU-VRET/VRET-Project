@@ -20,7 +20,9 @@
 
 **Realistic Achievement:** a deployable Babylon VR experience on Meta Quest 3/3s — this Fall, that's the mock demo (last semester's existing content, proving deployment works), not VRE-29's real scene content.
 
-**Collaboration:** support VR implementation for controllers; with Coco and Amanda, integrate their JSON file automation into the Blueprint Struct in Unreal Engine.
+**Collaboration:** support VR implementation for controllers; with Coco and Amanda, integrate their JSON file automation into the Blueprint Struct in Unreal Engine; per the 10/16 meeting, work closely with Amanda/Coco and cross-train — gain experience with their automation framework while they get hands-on VR implementation/testing experience, with Kevin's own demo serving as a practical testing endpoint for it.
+
+**Tooling note (10/16 meeting):** demoed on a Meta Quest 3S. The Immersive Web Emulator Chrome extension came up as a useful dev tool — lets you test WebXR experiences in a desktop browser without a physical headset, worth using for faster iteration.
 
 **Engine target (resolved):** Babylon.js + WebXR is the confirmed deployment pipeline — that's what actually ships to the Quest device. Unreal Engine (Blueprint Struct, behavior trees, Smart Objects) is upstream content-authoring tooling that feeds into that pipeline, not a competing runtime, so none of this work is blocked by engine ambiguity. If Unreal-authored behavior data can't be exported into the Babylon.js pipeline cleanly, that becomes the priority compatibility issue to raise with Fahim.
 

@@ -70,9 +70,9 @@ flowchart LR
     style AC_scene stroke:#F39C12,stroke-width:2px
 ```
 
-*(No owner — ⬜ — is shown implicitly: `Library`, `VRM`, `BJSE`, and `BabylonScene` sit outside every colored box. Kevin and Fahim each appear in more than one box since they own several disconnected parts of this flow, not one contiguous chunk.)*
-
-See Stage 3 and `docs/QWENTTS.md` for how the `QwenTTS` node actually works (voice cloning, local vs. hosted).
+- No owner (⬜) is implicit: `Library`, `VRM`, `BJSE`, `BabylonScene` sit outside every colored box.
+- Kevin and Fahim each appear in more than one box — they own several disconnected parts of this flow, not one contiguous chunk.
+- `QwenTTS` mechanics (voice cloning, local vs. hosted): Stage 3, `docs/QWENTTS.md`.
 
 ---
 
@@ -95,9 +95,13 @@ flowchart LR
     class VALID,Library,VRM artifact
 ```
 
-The character avatars are pulled from [valid-vrm-avatars](https://github.com/TLTMedia/valid-vrm-avatars), a pre-built library — not built from scratch per-character. It's VRM 1.0 conversions of Google and UCF's VALID (Virtual Avatar Library for Inclusion and Diversity) avatars, extended with ARKit-52 blend shapes (TLTMedia's `cleanFace.md` documents the Blender cleanup process used to wire them). Files are organized by ethnicity, then named `{Ethnicity}_{Sex}_{BodyType}_{Outfit}.vrm` (e.g. `Black_F_1_Casual.vrm`). Both avatars in the running demo come from this library, not custom builds. The `models/` folder in the legacy repo is a superset of this library — it also has non-ethnicity content (a `MetaHuman/` folder, named individual characters, environment props) that falls outside what this library covers. Full writeup (license, pros/cons): `docs/EXISTING_MODELS.md`.
-
-**Resolved:** these VRM files used to sit as a sibling of `babylon-clay-scene/`, served through a custom Vite dev-server plugin that reached up one directory — that broke on static hosting (no dev server on GitHub Pages to run the trick, per Kevin's working deploy at [kevexperiences.github.io/PersonalScene](https://kevexperiences.github.io/PersonalScene/)). The two VRM files actually in use now live at `babylon-clay-scene/public/models/`, served directly by Vite in both dev and production, with the custom middleware removed from `vite.config.ts` entirely.
+- Avatars come from [valid-vrm-avatars](https://github.com/TLTMedia/valid-vrm-avatars): VRM 1.0 conversions of Google/UCF's VALID avatars, not built per-character.
+- ARKit-52 blend shapes added on top via a Blender cleanup pass (`cleanFace.md`).
+- Naming: `{Ethnicity}_{Sex}_{BodyType}_{Outfit}.vrm` (e.g. `Black_F_1_Casual.vrm`).
+- Both avatars in the running demo come from this library.
+- The legacy repo's `models/` folder is a superset — also has a `MetaHuman/` folder, named individual characters, and environment props outside this library.
+- Full writeup (license, pros/cons): `docs/EXISTING_MODELS.md`.
+- VRM files are served from `babylon-clay-scene/public/models/`, directly by Vite in both dev and production.
 
 ## 2. Environment authoring
 
@@ -123,11 +127,12 @@ flowchart LR
     class GLB,Prebuilt,BabylonScene,SceneJSON artifact
 ```
 
-Unreal is **conditional, not mandatory** — it's for building custom levels/objects when nothing suitable already exists. "Prebuilt" covers two different things worth keeping distinct: **prebuilt assets** (individual purchased/free objects) or **prebuilt levels** (whole pre-made Unreal environments) — either way, if a good enough fit exists online, that gets used directly instead of custom Unreal authoring. Either path produces a `.glb` per asset (environment or individual object). The `BJSE` base-scene-assembly node has no single assigned owner — it's outside both colored boxes above.
-
-**Decided: these `.glb` assets are referenced by path in `VRET SceneJSON` and loaded directly at runtime (`App.ts`), not pre-combined into the `.babylon` file via the Editor.** `App.ts` already imports `@babylonjs/loaders/glTF`, so the runtime can load `.glb`/`.gltf` natively. This was chosen over pre-combining because scenes change as a whole (not just the background), and the team wants future asset-level manipulation — picking which objects go into a given scene — which needs each asset swappable independently rather than baked into one static file. The Babylon.js Editor still handles base scene assembly (the existing demo's `.babylon` file), separately from this per-asset runtime loading. This handoff isn't built yet — see Open Questions. **Note:** the 10/2 meeting also raised a somewhat different framing of how SceneJSON/BJSE/the Babylon Engine relate — see Stage 6, still being reconciled.
-
-**Tradeoff to watch:** loading N separate `.glb` files costs more than one pre-combined file — more network round-trips, more per-asset parse overhead, and more draw calls at render time (a combined file is typically mesh-merged by the Editor; separately-loaded assets aren't, unless done explicitly). Worth mitigating with parallel loading (`Promise.all` over the `ImportMeshAsync` calls, not sequential), Draco/KTX2-compressed exports, and modest per-object poly/texture budgets — especially since this ships to standalone Quest hardware, not desktop.
+- Unreal is conditional, not mandatory — only for custom levels/objects when nothing suitable already exists.
+- "Prebuilt" = either prebuilt assets (individual objects) or prebuilt levels (whole environments) — used directly instead of custom authoring when a good fit exists.
+- Either path produces a `.glb` per asset. `BJSE` has no single assigned owner.
+- **Decided:** `.glb` assets are referenced by path in `VRET SceneJSON` and loaded individually at runtime (`ImportMeshAsync` in `App.ts`), not pre-combined into `.babylon` via the Editor — scenes change as a whole and need asset-level swappability. This runtime handoff isn't built yet (see Open Questions).
+- **BJSE vs. the Babylon Engine:** BJSE is an offline editor — assembles the base scene (lights, camera, environment, static geometry) and exports a static `.babylon` file; no role at runtime. The Babylon Engine is the runtime library bundled into the deployed app — reads `.babylon` + `.glb`/VRM files live, in the browser. `VRET SceneJSON`'s assets load into the Engine at runtime, never pre-combined into `.babylon` via BJSE.
+- Tradeoff: N separate `.glb` loads cost more than one pre-combined file (more round-trips, more draw calls). Mitigate with parallel loading (`Promise.all`, not sequential), Draco/KTX2 compression, and modest poly/texture budgets — this ships to standalone Quest hardware.
 
 ## 3. Voice generation
 
@@ -148,11 +153,12 @@ flowchart LR
     class DialogueJSON,CloneWAV,WAV artifact
 ```
 
-QwenTTS doesn't take the raw script directly — `qwen.py` reads a `VRET DialogueJSON` file (the mood/personality descriptor for the line sits at the top of the JSON) and calls QwenTTS to generate audio **one dialogue piece at a time**, not the whole script in a single pass. Before any lines get generated, it also builds a cloned voice per character from a short reference clip plus its transcript, a one-time step reused for every line that character speaks. Output is one `.wav` per line.
-
-This is the local, open-weights path, which is free but needs a GPU to run at a reasonable speed (`qwen.py` currently loads it on CPU instead, which works but is likely much slower than intended). Alibaba separately hosts the same model as a paid cloud API, which we aren't using. Full mechanics, file-by-file breakdown, and open questions: `docs/QWENTTS.md`.
-
-A separate script — still being investigated by Fahim, tied to the facial-animation/audio sync gap — combines multiple per-line WAV files into one combined audio file downstream of this. Not yet documented here; see Open Questions.
+- `qwen.py` reads `VRET DialogueJSON` (mood/personality field at the top) and calls QwenTTS **one dialogue line at a time**, not the whole script in one pass.
+- Before generating any lines, it builds a cloned voice per character from a reference clip + transcript — a one-time step, reused for every line that character speaks.
+- Output: one `.wav` per line.
+- Local, open-weights, free — needs a GPU for reasonable speed (`qwen.py` currently runs on CPU instead). Alibaba also hosts it as a paid cloud API, unused here.
+- Full mechanics, file breakdown, open questions: `docs/QWENTTS.md`.
+- A separate, undocumented WAV-combining script (tied to the facial-animation/audio sync investigation) stitches per-line clips together downstream — see Open Questions.
 
 ## 4. Facial animation — choose ONE option per clip
 
@@ -174,7 +180,10 @@ flowchart LR
     class WAV,RuntimeJSON artifact
 ```
 
-Both tools take the same `.wav` audio and independently generate facial blend-shape animation — they're alternatives, not a chain, with different output formats/naming conventions each normalized by its own converter into the same schema (`fps`, `frameCount`, `blendShapeNames`, `frames`). `csv_converter.py` is the more finished of the two (real CLI, reads shape names from the CSV header); `parse_a2e.py` has the 52 names hardcoded and no CLI. All 4 of this demo's clips went through the **Audio2Face → CSV** path; LAM was only spot-tested on one clip.
+- Audio2Face-3D and LAM Audio2Expression are alternatives, not a chain — both take the same `.wav`, output different formats, each normalized by its own converter into one schema (`fps`, `frameCount`, `blendShapeNames`, `frames`).
+- `csv_converter.py` (Audio2Face path): real CLI, reads shape names from the CSV header.
+- `parse_a2e.py` (LAM path): 52 names hardcoded, no CLI.
+- All 4 of this demo's clips went through Audio2Face → CSV; LAM was only spot-tested on one clip.
 
 ## 5. Scene manifest (hand-authored)
 
@@ -194,7 +203,8 @@ flowchart LR
     class VRM,SceneJSON,RuntimeJSON,WAV,GLB artifact
 ```
 
-`VRET SceneJSON` (`scene.json`/`scene2.json`) ties everything together per character: which VRM to load, idle/breathing parameters, and an ordered list of clips pairing one animation JSON with one audio WAV. It's also where environment/object `.glb` assets get referenced by path (see Stage 2) — not yet implemented, but this is the intended location so individual assets can be picked per scene.
+- `VRET SceneJSON` (`scene.json`/`scene2.json`) is the per-character manifest: which VRM to load, idle/breathing params, and an ordered list of clips pairing one animation JSON with one audio WAV.
+- Also the intended location for environment/object `.glb` references by path (Stage 2) — not yet implemented.
 
 ## 6. Runtime
 
@@ -227,11 +237,11 @@ flowchart LR
     class BabylonScene,SceneJSON,VRM,RuntimeJSON,WAV,LiveAvatar artifact
 ```
 
-`App.ts` boots the Babylon engine, loads the base `.babylon` environment, then creates an `A2FAvatar` per character. `A2FAvatar` is the pipeline's actual end consumer, not another conversion step — its real inputs are the VRM model, the scene manifest, the per-clip animation JSON, and the clip's audio WAV; its output is a live, synced, animated avatar (morph-target weights applied every render frame, timed to `audio.currentTime` so lip-sync holds even if a frame renders late) that becomes part of the scene the Engine renders. WebXR ships that to the Meta Quest 3/3s, the confirmed deployment target.
-
-`VRET SceneJSON` feeds into BJSE as part of runtime compilation, and at runtime it's the Babylon Engine itself that's actually running. The precise distinction between what BJSE does vs. what the Babylon Engine does — and exactly how each relates to this demo — is still being worked out (Fahim is looking further into this). This is a slightly different framing than Stage 2's current documented understanding (BJSE as a build-time-only editor producing the `.babylon` file, with GLB assets loaded separately at runtime by `App.ts`/Babylon Engine) — the two need to be reconciled once Fahim's investigation lands. Don't treat either framing as settled yet.
-
-**GitHub** (SBU-VRET/VRET-Project) is the storage/versioning layer underneath every stage above.
+- `App.ts` boots the Babylon Engine, loads the base `.babylon` environment, then creates one `A2FAvatar` per character.
+- `A2FAvatar` is the pipeline's actual end consumer, not another conversion step. Inputs: VRM model, scene manifest, per-clip animation JSON, clip audio WAV. Output: a live, synced avatar — morph-target weights applied every render frame, timed to `audio.currentTime` so lip-sync holds even if a frame renders late.
+- WebXR ships that to the Meta Quest 3/3s, the confirmed deployment target.
+- BJSE vs. Babylon Engine: see Stage 2.
+- GitHub (SBU-VRET/VRET-Project) is the storage/versioning layer underneath every stage above.
 
 ## 7. Idle/body animation (VRMA) — choose ONE option
 
@@ -255,18 +265,17 @@ flowchart LR
     class IdleDesc,VRMAFile,Prompt,NPZ,BVH,ExistingVRMA artifact
 ```
 
-A separate animation track from Stage 4/6 — VRMA drives the avatar's *skeleton* (bones like `hips`, `spine`, retargeted by name), not the face. It covers idle poses/gestures/movement, where the Audio2Face/LAM pipeline only ever touches facial blend shapes. `A2FAvatar.applyVRMA(vrmaPath)` loads a `.vrma` file and retargets its animation tracks onto the avatar's bones, but neither demo character's `App.ts` setup calls it.
-
-**Option A — reuse what's already there.** The old repo's `vrma/` folder already has ~2,548 `.vrma` clips converted from the CMU Graphics Lab Motion Capture Database, retargetable onto any of our models with no extra conversion step, since VRMA only stores motion against VRM's standardized humanoid bone names. Full writeup (pros/cons, the unlabeled-filename problem, a known retargeting bug): `docs/EXISTING_MODELS.md`.
-
-**Option B — [Text to VRMA](https://github.com/Kirakun0328/text-to-vrma).** Outputs `.vrma` directly — consumable by `applyVRMA()` with no extra conversion step.
-
-**Option C — [ARDY](https://github.com/nv-tlabs/ardy)** (NVIDIA + ETH Zürich, SIGGRAPH 2026). A diffusion model that generates new motion in real-time from a text prompt plus optional kinematic constraints (root path/waypoints, keyframes, sparse joint positions) — it synthesizes motion, it doesn't select from a preset library. Output is `.npz` (world-space joint positions, local/global rotations, root position, foot contacts) across three skeleton options (a generic "Core" humanoid, Unitree G1 robot, or SOMA body model — "coming soon"). No VRM/VRMA export directly, but a usable path exists: **[bvh2vrma](https://github.com/vrm-c/bvh2vrma)** — the official VRM Consortium tool for converting BVH motion capture into VRMA — covers the second half of the job. That leaves one real gap: a small `npz_to_bvh.py` script to turn ARDY's joint data into BVH, which `bvh2vrma` can then convert to `.vrma`. Comparable in scope to `csv_converter.py`/`parse_a2e.py` in Stage 4, not a from-scratch VRMA/glTF exporter. Also requires local GPU inference for ARDY itself (Python 3.10+, PyTorch 2.4+, CUDA, RTX 4090 recommended).
+- VRMA animates the avatar's *skeleton* (bones like `hips`, `spine`), not the face — separate track from Stage 4/6's facial blend shapes.
+- `A2FAvatar.applyVRMA(vrmaPath)` loads and retargets a `.vrma` onto the avatar's bones — not called by either current demo character.
+- **Option A — reuse what's already there.** The old repo's `vrma/` has ~2,548 CMU-derived `.vrma` clips, already converted, no extra step needed. Full writeup: `docs/EXISTING_MODELS.md`.
+- **Option B — [Text to VRMA](https://github.com/Kirakun0328/text-to-vrma).** Outputs `.vrma` directly, no extra conversion.
+- **Option C — [ARDY](https://github.com/nv-tlabs/ardy)** (NVIDIA + ETH Zürich). Generates new motion from a text prompt, outputs `.npz`. Needs a `npz_to_bvh.py` script (not written) to reach `.bvh`, then **[bvh2vrma](https://github.com/vrm-c/bvh2vrma)** (official VRM-C tool) to reach `.vrma`. Needs local GPU inference (RTX 4090 recommended).
 
 ## Open questions / TODO
 - [ ] **Document the WAV-combining step.** The script that stitches multiple per-line WAV files into one combined audio file (built with Gemini's help) still isn't documented — likely tied to the facial-animation/audio sync gap Fahim's diagnosing. Distinct from `qwen.py` (Stage 3), which is now documented in `docs/QWENTTS.md`.
-- [ ] **Reconcile the BJSE vs. Babylon Engine framing.** Stage 2 treats BJSE as a build-time-only editor; the 10/2 meeting suggested `VRET SceneJSON` feeds into BJSE as part of *runtime* compilation. Fahim is looking further into this to determine the actual distinction and reconcile Stage 2 and Stage 6.
 - [ ] **Build runtime `.glb` loading in `App.ts`.** Decided: environment/object assets load individually at runtime (not pre-combined into `.babylon` via the Editor), referenced by path in `VRET SceneJSON` — see Stage 2. Not implemented yet.
+- [ ] **Does the base scene even need a `.babylon` file? (10/16 meeting)** Raised but not decided: load everything as `.glb` directly, skip BJSE/`.babylon` for the base scene too. Babylon.js stays the engine either way — confirm this still meets the project's scene requirements before changing anything.
+- [ ] **Materials/textures rendering cost across `.glb` assets (10/16 meeting).** Separate from the per-asset-loading tradeoff already noted in Stage 2 — specifically about how many distinct materials/textures the scene ends up with. Investigate optimization opportunities.
 - [ ] Clarify whether Unreal's export also needs to carry behavior-tree/Smart Object data (Kevin's Spring task), or whether that's a separate pipeline from the background/geometry export
 - [ ] **Pick an idle-animation source** — reuse the CMU `vrma/` library, Text to VRMA, or ARDY (research done — see Stage 7 above) — and wire `applyVRMA()` into `App.ts` for at least one character
 - [ ] Check whether the team has access to an RTX 4090 (or equivalent) if ARDY is the chosen path — it's a local-inference research model, not a lightweight tool

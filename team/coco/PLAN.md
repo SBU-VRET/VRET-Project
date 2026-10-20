@@ -16,7 +16,7 @@
 
 **Realistic Achievement:** a working script that generates a valid scene file from simple inputs (proof that one slice of automation works, not the full pipeline); a documented, versioned scene-file schema other teammates can build against.
 
-**Collaboration:** with Fahim, align on repo structure and branch findings before scoping new tooling; with Jayden, wire voice/audio work into the scene timeline's `speak` and `lipSync` fields.
+**Collaboration:** with Fahim, align on repo structure and branch findings before scoping new tooling; with Jayden, wire voice/audio work into the scene timeline's `speak` and `lipSync` fields; with Kevin (per 10/16 meeting) — work closely together and cross-train: Amanda/Coco get hands-on experience implementing/testing the VR experience, Kevin gets experience working with Amanda/Coco's framework, and Kevin's demo doubles as a practical testing endpoint for it.
 
 **Engine target (resolved):** Babylon.js + WebXR is the confirmed deployment pipeline. Unreal Engine is used upstream for scene authoring only, not the runtime — so the automation script should target VRM/VRMA-compatible outputs that feed Babylon.js directly.
 
@@ -35,7 +35,7 @@ Both of you own the automation script together; this split is a starting point, 
 | [ ] 10/5 | Branch sync | Join Amanda's sync with Fahim on Bennett & Jungu branch history before scoping new tooling (background/tooling work, not on the mock demo's own critical path — see README's Mock Demo Completion Checklist) |
 | [ ] 10/12 | Research + storyline start | Compile faster-generation research findings; start researching choice-based storyline mechanics |
 | [ ] 10/19 | Automation script scoping | With Amanda, define automation script inputs/outputs (avatar list + dialogue script → `scene_XX.json` skeleton) |
-| [ ] 10/26 | Script build | Continue script prototype, targeting VRM/VRMA output for the Babylon.js/WebXR pipeline |
+| [ ] 10/26 | **Priority shift: scene asset population** | Faculty-directed reprioritization (confirmed again at 10/16 meeting — build out scene assets before moving to automation). With Amanda: first establish a realistic, populated scene; figure out how to bound the Clay Ave scene's visible distance (what appears beyond the immediate scene boundaries — consider whether a skybox or a world-building tool is the right approach); compile the list of necessary assets (cars, pedestrians, props/objects) needed to actually populate the scene. Use the completed scene to guide the subsequent automation work. Shared work: finishes out the mock demo's currently-bare reused environment, and is directly reusable for VRE-29's real-demo build-out — not exclusively one or the other. |
 | [ ] 11/2 | Script build | Continue script build |
 | [ ] 11/9 | Testing | Test the automation script against at least one real scene; fix bugs |
 | [ ] 11/16 | Wrap research | Finalize the choice-based storyline research write-up (feasibility + recommended approach for Spring) |

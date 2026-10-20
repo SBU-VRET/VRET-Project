@@ -153,6 +153,9 @@ The concrete, critical-path steps that actually make the mock demo *done* (deplo
 | [ ] | Verify the fix with the team via Discord check-in, rather than self-certifying alone (Friday 10/9 sync was skipped) | Fahim | 10/12 |
 | [ ] | Get the restructured build deployed and viewable (web build at minimum, following Kevin's own GitHub Pages precedent) — confirm as soon as Fahim's restructure lands, don't wait for the full device-build week | Kevin | 10/12 |
 | [ ] | Full Quest 3/3s device build (controllers, comfort, tracking) | Kevin | 10/26 |
+| [ ] | Populate the Clay Ave scene — bound the visible distance (block off/cap what's beyond the built environment) and add necessary assets (cars, pedestrians, props) | Amanda/Coco | 10/26 |
+
+**Added to this critical path (faculty-directed, 10/20):** the mock demo currently reuses last semester's environment "as-is," but that environment is too bare to actually be presentable — Amanda/Coco are now populating it (scene boundary + necessary assets), which doubles as groundwork for VRE-29's real-demo environment build-out. Their automation-script work is paused for this week to make room.
 
 **Not on this critical path** (valuable, but doesn't block the mock demo from being done): Amanda/Coco's schema documentation and automation-script work document and build tooling *around* the existing demo's files — they don't change whether the mock demo itself runs. Kevin's Blueprint Struct/Unreal work is for the *real* demo's future custom-level pipeline, not the mock demo, which reuses the existing environment and never touches Unreal.
 

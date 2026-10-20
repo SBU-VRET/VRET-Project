@@ -22,6 +22,7 @@ to work around.
 
 3. What content/triggers must be avoided or softened per clinical guidance? (coordinate with Jayden)
    - **Answer:** Build a softening menu — start the siren/police-car arrival and bystander-crowd hostility at a baseline level, not full intensity, since the scene still needs to be a genuinely traumatic experience for the user to work through. The menu lets a clinician soften either trigger further when a session calls for it. An on-site clinician to intervene directly (pause, de-escalate, stop the scene) is nice to include if we can swing it for the first demo, but may have to be deferred.
+   - **Future idea (10/16 meeting, not decided):** use the user's head direction (not actual eye tracking) to trigger contextual dialogue — e.g. looking away from the officer could prompt "Why are you ignoring me?"
 
 4. How does this scene hand off into the therapeutic follow-up portion?
    - **Answer:** The scene ends when the driver is made to step out of the car with hands up, fades to a black screen, then hands off into the separate therapeutic/debrief portion.
@@ -49,6 +50,7 @@ to work around.
 
 10. What is the scene — what environment/location is it set in, existing asset or new build?
     - **Answer:** Clay Ave, a residential Bronx street. Definitely reusing last semester's scene concept, closing out on a stylized infinite, nighttime version of the same street for the ending beat.
+    - **Still open:** the "infinite street" treatment only covers the ending beat — how the scene bounds the user's view down the street *during* the main scene (what appears beyond the immediate scene boundaries) isn't resolved yet. Amanda/Coco are now working this out (faculty-directed, week of 10/26) — considering whether a skybox or a world-building tool is the right approach.
 
 11. What's the scene's intended duration?
     - **Answer:** Not established yet — depends on the final script/voice-line runtime, which isn't compiled yet.
@@ -57,6 +59,7 @@ to work around.
 
 12. What objects are necessary in the scene?
     - **Answer:** Parked cars, trees, rowhouses, the police car (with siren audio), and optionally a bystander crowd — plus sound effects like window-knocking, and ambient noise like wind or city sounds. Per the 10/2 meeting, add basic environmental activity for realism: cars should move occasionally, and people should walk around occasionally.
+    - **Still open:** this is a starting list, not a final one. Amanda/Coco are now compiling the actual necessary-assets list (cars, pedestrians, props) needed to populate the scene for real (faculty-directed, week of 10/26) — see `README.md`'s Mock Demo Completion Checklist.
 
 13. Which objects are just background vs. need to be interactive?
     - **Answer:** Only the siren and bystander crowd need to be adjustable/interactive; everything else (cars, trees, buildings) is static background.
