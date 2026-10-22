@@ -1,0 +1,155 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Viseme check</title>
+<style>
+  body { font-family: sans-serif; background: #111; color: #eee; margin: 0; padding: 16px; }
+  select, audio { margin-bottom: 12px; }
+  #wrap { position: relative; }
+  canvas { background: #1a1a1a; display: block; border: 1px solid #333; }
+  #legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; font-size: 12px; }
+  #legend span { display: inline-flex; align-items: center; gap: 4px; }
+  #legend i { width: 12px; height: 12px; display: inline-block; border-radius: 2px; }
+  #time { font-variant-numeric: tabular-nums; margin-left: 12px; }
+  #hover { font-variant-numeric: tabular-nums; margin-top: 4px; font-size: 13px; color: #aaa; }
+</style>
+</head>
+<body>
+  <div>
+    <select id="clip">
+      <option value="altaforte">altaforte</option>
+      <option value="goodly">goodly</option>
+      <option value="lightspent">lightspent</option>
+      <option value="throughglass" data-audio="through_glass">through_glass</option>
+    </select>
+    <audio id="player" controls></audio>
+    <span id="time">0.00s</span>
+  </div>
+  <div id="wrap">
+    <canvas id="chart" width="1400" height="420"></canvas>
+  </div>
+  <div id="legend"></div>
+  <div id="hover">Hover the chart to read exact weights at a timestamp.</div>
+
+<script>
+// Shapes most relevant to viseme shape (not eyes/brows/head)
+const SHAPES = [
+  ["jawOpen",        "#e74c3c"],
+  ["mouthFunnel",    "#3498db"],
+  ["mouthPucker",    "#9b59b6"],
+  ["mouthClose",     "#f1c40f"],
+  ["mouthShrugUpper","#1abc9c"],
+  ["mouthShrugLower","#e67e22"],
+  ["mouthLowerDownLeft",  "#2ecc71"],
+  ["mouthLowerDownRight", "#27ae60"],
+  ["mouthUpperUpLeft",    "#95a5a6"],
+  ["mouthUpperUpRight",   "#7f8c8d"],
+  ["mouthRollLower", "#d35400"],
+  ["mouthRollUpper", "#c0392b"],
+];
+
+const clipSel = document.getElementById("clip");
+const player = document.getElementById("player");
+const canvas = document.getElementById("chart");
+const ctx = canvas.getContext("2d");
+const timeEl = document.getElementById("time");
+const hoverEl = document.getElementById("hover");
+const legend = document.getElementById("legend");
+
+legend.innerHTML = SHAPES.map(([name, color]) =>
+  `<span><i style="background:${color}"></i>${name}</span>`
+).join("");
+
+let frames = null, names = null, duration = 1;
+
+async function loadClip(clip) {
+  const opt = clipSel.selectedOptions[0];
+  const audioName = opt.dataset.audio || clip;
+  const res = await fetch(`/animations/${clip}_frames.json`);
+  const data = await res.json();
+  frames = data.frames;
+  names = data.blendShapeNames;
+  duration = frames[frames.length - 1].time;
+  player.src = `/audio/${audioName}.wav`;
+  draw();
+}
+
+function shapeIndex(name) { return names.indexOf(name); }
+
+function draw() {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // gridlines every second
+  ctx.strokeStyle = "#2a2a2a";
+  ctx.fillStyle = "#666";
+  ctx.font = "10px sans-serif";
+  for (let t = 0; t <= duration; t++) {
+    const x = (t / duration) * w;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    ctx.fillText(t + "s", x + 2, h - 2);
+  }
+
+  for (const [name, color] of SHAPES) {
+    const idx = shapeIndex(name);
+    if (idx < 0) continue;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    frames.forEach((fr, i) => {
+      const x = (fr.time / duration) * w;
+      const y = h - 20 - fr.weights[idx] * (h - 30);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+
+  // playhead
+  const t = player.currentTime || 0;
+  const x = (t / duration) * w;
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+}
+
+function frameAtTime(t) {
+  // nearest frame
+  let lo = 0, hi = frames.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (frames[mid].time < t) lo = mid + 1; else hi = mid;
+  }
+  return frames[lo];
+}
+
+canvas.addEventListener("mousemove", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const t = (x / canvas.width) * duration;
+  const fr = frameAtTime(t);
+  if (!fr) return;
+  const parts = SHAPES
+    .map(([name]) => [name, shapeIndex(name)])
+    .filter(([, idx]) => idx >= 0)
+    .map(([name, idx]) => `${name}=${fr.weights[idx].toFixed(2)}`);
+  hoverEl.textContent = `t=${t.toFixed(2)}s  |  ${parts.join("  ")}`;
+});
+
+player.addEventListener("timeupdate", () => {
+  timeEl.textContent = player.currentTime.toFixed(2) + "s";
+  draw();
+});
+player.addEventListener("seeking", draw);
+
+canvas.addEventListener("click", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  player.currentTime = (x / canvas.width) * duration;
+});
+
+clipSel.addEventListener("change", () => loadClip(clipSel.value));
+loadClip(clipSel.value);
+</script>
+</body>
+</html>

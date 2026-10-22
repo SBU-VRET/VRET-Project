@@ -5,7 +5,7 @@
         "blinkIntervalMax": 5.0,
         "blinkDuration": 0.15,
         "breathCycleSpeed": 0.4,
-        "breathJawAmount": 0.05
+        "breathJawAmount": 0.1
     },
     "clips": [
         {

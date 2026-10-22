@@ -358,14 +358,21 @@ export class A2FAvatar {
   }
 
   _tickIdle(dt) {
+    this._tickBlink(dt);
+
+    // Breathing — not driven during PLAYING, where real speech jaw movement must win
+    const cfg = this.idleConfig;
+    const breathVal = (Math.sin(this.idleElapsed * cfg.breathCycleSpeed * Math.PI * 2) + 1) * 0.5;
+    this._applyShape('jawOpen', breathVal * cfg.breathJawAmount);
+  }
+
+  // Blinking only (no breathing/jaw) — also called from _tickPlaying, since the
+  // captured animation data's own eyeBlink weights are flat/near-zero and would
+  // otherwise suppress blinking for the whole duration of a clip.
+  _tickBlink(dt) {
     this.idleElapsed += dt;
     const cfg = this.idleConfig;
 
-    // Breathing
-    const breathVal = (Math.sin(this.idleElapsed * cfg.breathCycleSpeed * Math.PI * 2) + 1) * 0.5;
-    this._applyShape('jawOpen', breathVal * cfg.breathJawAmount);
-
-    // Blinking
     if (this.blinkTimer < 0) {
       if (this.idleElapsed >= this.nextBlinkAt) {
         this.blinkTimer = 0;
@@ -465,6 +472,8 @@ export class A2FAvatar {
     for (let i = 0; i < names.length; i++) {
       this._applyShape(names[i], weights[i] || 0);
     }
+
+    this._tickBlink(dt);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
