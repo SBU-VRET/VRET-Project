@@ -136,7 +136,7 @@ export class App {
 		try {
 			console.log('[App] Loading babylon scene...');
 			SceneLoader.ForceFullSceneLoadingForIncremental = true;
-			await SceneLoader.AppendAsync("/scene/", "example.babylon", this.scene);
+			await SceneLoader.AppendAsync(`${import.meta.env.BASE_URL}scene/`, "example.babylon", this.scene);
 			await this.scene.whenReadyAsync();
 			console.log('[App] Scene loaded');
 		} catch (e) {
