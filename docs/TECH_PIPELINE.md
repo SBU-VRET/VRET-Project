@@ -6,6 +6,8 @@ Split into one small diagram per stage (instead of one giant flowchart) so each 
 
 🔵 blue = software/program (actually does something) · 🟡 amber = data/file/artifact (gets produced or consumed)
 
+🌐 = runs online/in the cloud (needs a live connection) · 💻 = runs offline/locally (no network dependency once set up) — marked on tool nodes where this is established; unmarked tools haven't been confirmed either way yet.
+
 **Ownership boundaries:** thin colored boxes inside each diagram mark which nodes a specific person owns — 🟦 Fahim · 🟩 Kevin · 🟪 Jayden · 🟧 Amanda/Coco · ⬜ no owner (external). Nodes outside any colored box have no single assigned owner.
 
 ## Overview
@@ -110,14 +112,14 @@ flowchart LR
 ```mermaid
 flowchart LR
     subgraph K2["🟩 Kevin — export workflow"]
-    Unreal["<b>Unreal Engine</b><br/>(if needed)<br/>custom levels/objects"] -->|"exports .glb"| GLB["<b>Exported .glb</b><br/>(per asset)"]
+    Unreal["💻 <b>Unreal Engine</b><br/>(if needed)<br/>custom levels/objects"] -->|"exports .glb"| GLB["<b>Exported .glb</b><br/>(per asset)"]
     Prebuilt["<b>Prebuilt Assets or<br/>Levels (Unreal)</b><br/>(if a good fit exists)"] -->|"already .glb"| GLB
     end
     subgraph F2["🟦 Fahim — runtime loading"]
     GLB -->|"referenced by path"| SceneJSON["VRET SceneJSON"]
     SceneJSON -->|"ImportMeshAsync()<br/>at runtime"| AppTS["App.ts"]
     end
-    BJSE["<b>Babylon.js Editor</b><br/>(bjse-project)<br/>base scene assembly"] -->|exports| BabylonScene["<b>.babylon scene file</b><br/>public/scene/example.babylon"]
+    BJSE["💻 <b>Babylon.js Editor</b><br/>(bjse-project)<br/>base scene assembly"] -->|exports| BabylonScene["<b>.babylon scene file</b><br/>public/scene/example.babylon"]
 
     style K2 stroke:#10AC84,stroke-width:2px
     style F2 stroke:#2E86DE,stroke-width:2px
@@ -143,7 +145,7 @@ flowchart LR
     subgraph S3["🟪 Jayden — content (script maintainer unassigned)"]
     CloneWAV["Reference voice clips<br/><b>cloneWav/*.wav</b><br/>(one per character)"] -->|"1) create_voice_clone_prompt()<br/>once per character, first"| PyScript["VRET qwen.py"]
     DialogueJSON["<b>VRET DialogueJSON</b><br/>(mood/personality field<br/>+ script lines)"] -->|"2) generate_voice_clone()<br/>one line at a time, after"| PyScript
-    PyScript --> QwenTTS["<b>QwenTTS</b><br/>(local, open-weights)"] --> WAV["Voice line audio<br/><b>audio/*.wav</b><br/>(one file per line)"]
+    PyScript --> QwenTTS["💻 <b>QwenTTS</b><br/>(local, open-weights)"] --> WAV["Voice line audio<br/><b>audio/*.wav</b><br/>(one file per line)"]
     end
 
     style S3 stroke:#9B59B6,stroke-width:2px
@@ -167,23 +169,28 @@ flowchart LR
 ```mermaid
 flowchart LR
     subgraph S4["🟦 Fahim"]
-    WAV["audio/*.wav"] --> A2F["Option A:<br/><b>NVIDIA Audio2Face-3D</b>"] -->|"CSV<br/>EyeBlinkLeft"| CSVConv["<b>csv_converter.py</b><br/>(real CLI)"]
-    WAV --> LAM["Option B:<br/><b>LAM Audio2Expression</b>"] -->|"JSON<br/>eyeBlink_L"| ParseA2E["<b>parse_a2e.py</b><br/>(no CLI)"]
-    CSVConv --> RuntimeJSON["<b>VRET AnimationJSON</b><br/>animations/*_frames.json"]
+    WAV["audio/*.wav"] --> LAMColabNB["<b>VRET LAM_Audio2Expression_Colab.ipynb</b><br/>PREFERRED (no local GPU needed)"] --> GoogleColab["🌐 <b>Google Colab</b><br/>free NVIDIA T4 GPU"] --> LAMColabTool["<b>LAM Audio2Expression</b>"] -->|"JSON<br/>eyeBlink_L"| ParseA2E["<b>parse_a2e.py</b><br/>(real CLI)"]
+    WAV --> LAMLocal["💻 <b>PREFERRED</b><br/>LAM Audio2Expression<br/>local (needs NVIDIA GPU)"] -->|"JSON<br/>eyeBlink_L"| ParseA2E
+    WAV -.-> A2FDirect["⚠️ DEPRECATED 🌐<br/><b>a2f_extractor.py</b><br/>NVCF cloud endpoint shut down"] -.-> RuntimeJSON["<b>VRET AnimationJSON</b><br/>animations/*_frames.json"]
+    WAV -.-> A2F["⚠️ NOT PREFERRED 💻<br/><b>NVIDIA Audio2Face-3D</b><br/>manual export, self-host only now"] -.->|"CSV<br/>EyeBlinkLeft"| CSVConv["<b>csv_converter.py</b><br/>(real CLI)"]
     ParseA2E --> RuntimeJSON
+    CSVConv -.-> RuntimeJSON
     end
 
     style S4 stroke:#2E86DE,stroke-width:2px
     classDef tool fill:#6c9bd1,stroke:#2c4a6b,stroke-width:2px,color:#fff;
+    classDef deprecated fill:#95a5a6,stroke:#c0392b,stroke-width:2px,color:#fff,stroke-dasharray: 4 3;
     classDef artifact fill:#fbe7a1,stroke:#a87f1a,stroke-width:1px,color:#000;
-    class A2F,LAM,CSVConv,ParseA2E tool
+    class LAMColabNB,GoogleColab,LAMColabTool,LAMLocal,ParseA2E tool
+    class A2F,A2FDirect,CSVConv deprecated
     class WAV,RuntimeJSON artifact
 ```
 
-- Audio2Face-3D and LAM Audio2Expression are alternatives, not a chain — both take the same `.wav`, output different formats, each normalized by its own converter into one schema (`fps`, `frameCount`, `blendShapeNames`, `frames`).
-- `csv_converter.py` (Audio2Face path): real CLI, reads shape names from the CSV header.
-- `parse_a2e.py` (LAM path): 52 names hardcoded, no CLI.
-- All 4 of this demo's clips went through Audio2Face → CSV; LAM was only spot-tested on one clip.
+- **LAM Audio2Expression is the preferred path (decided 2026-10-22).** NVIDIA Audio2Face-3D's hosted cloud endpoint — its one real advantage, avoiding local GPU use — is deprecated, so both tools now equally require a GPU; LAM is free either way, Audio2Face-3D self-hosted likely isn't. See `docs/AUDIO2FACE_VS_AUDIO2EXPRESSION.md` for the full comparison.
+- `LAM_Audio2Expression_Colab.ipynb` (`babylon-clay-scene/animations/`): runs LAM on a free Google Colab NVIDIA T4 GPU for machines without one locally — builds its own Python 3.10 venv, installs deps via pip, downloads weights, runs inference, downloads the result. Full step-by-step in `ANIMATION_PIPELINE.md` §6.
+- `parse_a2e.py` (LAM path): now has a real CLI (`-o`, `--quiet`), not hardcoded filenames.
+- **Audio2Face-3D is explicitly not preferred going forward** — `a2f_extractor.py` (direct gRPC) is fully deprecated since its NVCF cloud endpoint is shut down; manual CSV export + `csv_converter.py` still technically works but requires self-hosting Audio2Face-3D, which needs the same GPU LAM needs anyway, for a tool that's likely not free. Kept in the repo and documented only in case self-hosted Audio2Face-3D becomes worth revisiting later.
+- All 4 of this demo's current clips went through Audio2Face → CSV (manual export, predates `a2f_extractor.py`, confirmed via git history — see `docs/FACIAL_ANIM_REGEN_NOTES.md`), with every Audio2Face parameter on them unknown/untuned. LAM was only spot-tested on one clip before this decision.
 
 ## 5. Scene manifest (hand-authored)
 
@@ -252,7 +259,7 @@ flowchart LR
     subgraph S7["🟦 Fahim"]
     ExistingVRMA["Option A:<br/><b>vrma/ (CMU library)</b><br/>~2,548 pre-converted clips"] -->|"already .vrma,<br/>no conversion needed"| VRMAFile["<b>.vrma file</b><br/>(skeletal/body animation,<br/>not facial blend shapes)"]
     IdleDesc["Idle animation<br/>description"] --> TextToVRMA["Option B:<br/><b>Text to VRMA</b>"] -->|generates| VRMAFile
-    Prompt["Text prompt +<br/>kinematic constraints"] --> ARDY["Option C:<br/><b>ARDY (NVIDIA)</b>"] -->|exports| NPZ[".npz joint data"]
+    Prompt["Text prompt +<br/>kinematic constraints"] --> ARDY["💻 Option C:<br/><b>ARDY (NVIDIA)</b>"] -->|exports| NPZ[".npz joint data"]
     NPZ --> NPZtoBVH["<b>npz_to_bvh.py</b><br/>(needs to be written)"] -->|generates| BVH[".bvh file"]
     BVH --> BVH2VRMA["<b>bvh2vrma</b><br/>(official VRM-C tool)"] --> VRMAFile
     VRMAFile -.-> A2FAvatar["A2FAvatar.js"]
@@ -274,7 +281,7 @@ flowchart LR
 ## Open questions / TODO
 - [ ] **Document the WAV-combining step.** The script that stitches multiple per-line WAV files into one combined audio file (built with Gemini's help) still isn't documented — likely tied to the facial-animation/audio sync gap Fahim's diagnosing. Distinct from `qwen.py` (Stage 3), which is now documented in `docs/QWENTTS.md`.
 - [ ] **Build runtime `.glb` loading in `App.ts`.** Decided: environment/object assets load individually at runtime (not pre-combined into `.babylon` via the Editor), referenced by path in `VRET SceneJSON` — see Stage 2. Not implemented yet.
-- [ ] **Does the base scene even need a `.babylon` file? (10/16 meeting)** Raised but not decided: load everything as `.glb` directly, skip BJSE/`.babylon` for the base scene too. Babylon.js stays the engine either way — confirm this still meets the project's scene requirements before changing anything.
+- [ ] **Does the base scene even need a `.babylon` file? (10/16 meeting)** Raised but not decided: load everything as `.glb` directly, skip BJSE/`.babylon` for the base scene too. Babylon.js stays the engine either way — confirm this still meets the project's scene requirements before changing anything. **Stronger case as of 2026-10-22:** there's no editable BJSE source project for the current scene anywhere — checked every branch of the legacy repo, the committed `bjse-project`/`BJSE_project`/`NewBJSE_project` folders are all stuck at a tiny ~23KB placeholder, nowhere near the actual ~5MB scene that got exported as `example.babylon`. Confirmed that exported file is a direct, near-byte-identical carryover from the legacy repo's `bennett` branch. Whoever built the real scene up in BJSE never committed the updated project file — only the final export. Editing the current scene in BJSE now means either asking Bennett directly if he still has the local project, or importing the lossy export into a fresh project (known issues: textures/post-processing don't always survive re-import). **Before relying on BJSE for any future scene work, an actual editable source project needs to exist and get committed** — not just the exported `.babylon`, which is effectively a dead end for further editing.
 - [ ] **Materials/textures rendering cost across `.glb` assets (10/16 meeting).** Separate from the per-asset-loading tradeoff already noted in Stage 2 — specifically about how many distinct materials/textures the scene ends up with. Investigate optimization opportunities.
 - [ ] Clarify whether Unreal's export also needs to carry behavior-tree/Smart Object data (Kevin's Spring task), or whether that's a separate pipeline from the background/geometry export
 - [ ] **Pick an idle-animation source** — reuse the CMU `vrma/` library, Text to VRMA, or ARDY (research done — see Stage 7 above) — and wire `applyVRMA()` into `App.ts` for at least one character

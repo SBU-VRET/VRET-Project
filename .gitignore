@@ -1,10 +1,14 @@
 node_modules/
 dist/
+__pycache__/
 .env
 .DS_Store
 Thumbs.db
 temp/
 docs/RECENT_EDITS.md
 docs/FACIAL_ANIM_REGEN_NOTES.md
+docs/MEETING_NOTES_WEEK_OF_10-16.md
+docs/PROJECT_GAPS.md
 babylon-clay-scene/public/models/
 valid-vrm-avatars/
+babylon-clay-scene/animations/a2f_config.json

@@ -148,6 +148,12 @@ export class App {
 			console.log('[App] Attaching camera controls...');
 			if (this.scene.activeCamera) {
 				this.scene.activeCamera.attachControl();
+				// Override the .babylon file's baked-in start position (far from
+				// the avatars) so the scene opens facing them directly, instead of
+				// requiring manual navigation to find them. Avatars are hardcoded
+				// below around (5000-5300, 5.5, -400 to -600).
+				this.scene.activeCamera.position = new Vector3(4700, 160, -350);
+				(this.scene.activeCamera as any).setTarget(new Vector3(5100, 100, -500));
 			}
 			console.log('[App] Camera ready');
 		} catch (e) {

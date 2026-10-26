@@ -1,6 +1,8 @@
 # Audio2Face vs. LAM Audio2Expression
 
-Of the two, Audio2Face-3D through its NVCF cloud option seems like the better fit for our needs, mainly because it avoids straining our own GPUs and is the more polished tool overall, though the free credits won't last forever and it likely becomes a real cost long term. LAM Audio2Expression is worth trying too since it's completely free, just at the cost of needing our own GPU.
+**Update (2026-10-22): decision — going with LAM Audio2Expression going forward.** Audio2Face-3D's hosted NVCF cloud endpoint is now deprecated — NVIDIA's own page shows "This NIM Endpoint has been deprecated. Please transition to another model to avoid any service interruptions," with no specific replacement named. The software itself still exists and can still be self-hosted, but the whole reason it was recommended over LAM (avoiding GPU strain via the cloud option) no longer applies. **Both tools now require our own GPU hardware either way**, and on that level footing LAM wins on cost (confirmed free/open-source vs. Audio2Face-3D's likely-still-paid self-hosted licensing) and probably on resource usage too (LAM's small Wav2Vec-based encoder-decoder vs. Audio2Face-3D's ~5-6GB VRAM default and Ampere/Ada/Blackwell-only requirement, though LAM doesn't publish an exact VRAM figure to confirm against).
+
+~~Of the two, Audio2Face-3D through its NVCF cloud option seems like the better fit for our needs, mainly because it avoids straining our own GPUs and is the more polished tool overall, though the free credits won't last forever and it likely becomes a real cost long term. LAM Audio2Expression is worth trying too since it's completely free, just at the cost of needing our own GPU.~~
 
 Both of these tools take in `.wav` audio and produce facial animation in the same general format (ARKit blendshapes), which is why `csv_converter.py` and `parse_a2e.py` are able to land on the same unified schema downstream (see `docs/TECH_PIPELINE.md`, Stage 4). Past that point, however, the two tools are built quite differently, and the gap in how polished each one is seems to come directly from who built them.
 
@@ -9,7 +11,7 @@ Costs:
 - LAM Audio2Expression: free and open source, with no licensing cost at all, though it does need our own GPU hardware to actually run it.
 
 Resource usage:
-- Audio2Face-3D: in self-hosted mode, NVIDIA's docs put it at around 5-6GB of VRAM by default, needing an Ampere, Ada, or Blackwell generation GPU. This can be tuned down to under 1GB for edge deployments by limiting it to a single TensorRT stream, though that likely trades off some performance. In NVCF cloud mode, our own machines don't need any GPU or VRAM at all, since NVIDIA's servers handle it.
+- Audio2Face-3D: in self-hosted mode, NVIDIA's docs put it at around 5-6GB of VRAM by default, needing an Ampere, Ada, or Blackwell generation GPU. This can be tuned down to under 1GB for edge deployments by limiting it to a single TensorRT stream, though that likely trades off some performance. NVCF cloud mode would have needed no GPU/VRAM on our end at all, but **that hosted endpoint is now deprecated** (see note above) — self-hosted is effectively the only option left.
 - LAM Audio2Expression: always needs our own GPU since there's no cloud option, and the install itself needs a real CUDA setup (not just any NVIDIA card). I was unable to find an official VRAM figure from the repo or docs, but the model itself (a small Wav2Vec-based encoder-decoder) is much smaller than a generative model like Audio2Face-3D, so it's likely lighter in practice, just unconfirmed.
 
 ## NVIDIA Audio2Face-3D
@@ -22,6 +24,16 @@ In terms of how we would actually have to use it, Audio2Face-3D is packaged as a
 - **Cloud-hosted through NVCF** (NVIDIA Cloud Functions). Every request goes out to NVIDIA's servers and requires an API key and a live connection the whole time, but it offloads all the GPU work to NVIDIA's infrastructure instead of ours. Given that we want to avoid local strain, this is likely the better fit for the team, as long as the free credits or pricing work out.
 
 The API itself uses gRPC rather than REST. The clearest example of what calling it actually looks like comes from NVIDIA's own Unreal Engine plugin: it converts the audio clip to 16kHz mono before sending it off, and the API key can be loaded at runtime instead of being hardcoded into the project.
+
+## Configurable parameters, beyond the audio itself
+
+**Audio2Face-3D** exposes real tuning knobs through its gRPC request fields:
+- Face region parameters (`face_params`): `lowerFaceSmoothing`, `upperFaceSmoothing`, `lowerFaceStrength`, `upperFaceStrength`, `faceMaskLevel`, `faceMaskSoftness`, `skinStrength`, `blinkStrength`, `eyelidOpenOffset`, `lipOpenOffset`, `blinkOffset`, `tongueStrength`, `tongueHeightOffset`, `tongueDepthOffset`
+- Emotion post-processing: `emotion_contrast`, `live_blend_coef`, `enable_preferred_emotion`, `preferred_emotion_strength`, `emotion_strength`, `max_emotions`
+- Emotion timing: `beginning_emotion` (starting strengths per emotion — amazement, anger, cheekiness, disgust, fear, grief, joy, outofbreath, pain, sadness), `live_transition_time`, and per-chunk emotion keyframes (`time_code` + emotion map) for emotion that changes over a clip
+- Blendshape adjustments: per-shape `bs_weight_multipliers`/`bs_weight_offsets`, optional output clamping to 0-1
+
+**LAM-A2E** exposes far less on the surface — `inference.py --options` only documents `save_path`, `weight`, and `audio_input`. But the "style" input the architecture description mentions isn't absent, just hardcoded: the default config (`configs/lam_audio2exp_config_streaming.py`) sets `id_idx = 0` against `num_identity_classes = 12` (`identity_feat_dim = 64`) — so style is really an **identity class**, one of 12 the model was trained on, selected by `id_idx` and defaulting to class 0. Since `--options` takes arbitrary `key=value` overrides, `id_idx` is likely overridable the same way (`--options id_idx=3 ...`), just undocumented and untested here — the repo doesn't explain what each of the 12 classes actually sounds/looks like.
 
 ## LAM Audio2Expression (LAM-A2E)
 
@@ -66,5 +78,7 @@ This difference in maturity is likely why `csv_converter.py` (Audio2Face's side)
 - [Audio2Face-3D Authoring Microservice docs](https://archive.docs.nvidia.com/ace/audio2face-3d-authoring-microservice/0.2/index.html)
 - [Audio2Face-3D NIM Docker deploy page](https://build.nvidia.com/nvidia/audio2face-3d/docker)
 - [ACE Unreal Plugin, Audio2Face integration](https://docs.nvidia.com/ace/ace-unreal-plugin/2.5/ace-unreal-plugin-audio2face.html)
+- [Audio2Face-3D gRPC API reference (request parameters)](https://archive.docs.nvidia.com/ace/audio2face-3d-microservice/latest/text/interacting/a2f-rpc.html)
+- [LAM_Audio2Expression default streaming config](https://github.com/aigc3d/LAM_Audio2Expression/blob/main/configs/lam_audio2exp_config_streaming.py)
 - [LAM main repo](https://github.com/aigc3d/LAM)
 - [LAM_Audio2Expression repo](https://github.com/aigc3d/LAM_Audio2Expression)
