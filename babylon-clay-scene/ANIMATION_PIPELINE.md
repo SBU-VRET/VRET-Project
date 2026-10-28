@@ -362,17 +362,19 @@ next**, rather than running the whole notebook blindly end to end.
    assumed in cell 8.
    - **Cell 6b (fallback)** — only run this if cell 6 errors; same download
      from NVIDIA's OSS mirror instead of HuggingFace.
-9. **Cell 7 — upload your audio file** (one of our clip `.wav`s) via the
-   file-picker prompt it shows.
-10. **Cell 8 — run inference.** Writes to its own `exp/audio2exp_<clip name>`
-    folder (derived from whatever you uploaded in cell 7), so running
-    inference on a second clip later won't overwrite an earlier one's output.
-    If cell 6's `find` output showed a different weight path than the one
-    hardcoded here, **edit the `weight=` argument before running this cell.**
-11. **Cell 9 — find and download the output JSON.** Auto-detects the JSON
-    inside that clip's own output folder and downloads it — no path editing
-    needed here.
-12. **Convert the downloaded JSON** with `parse_a2e.py` exactly as in the
+9. **Cell 7 — upload your audio file(s)** via the file-picker prompt it
+   shows — select multiple at once if you want several clips processed in
+   one pass, not just one. Deletes any leftover `.wav` files from a previous
+   run first, so a re-upload of the same clip name doesn't get silently
+   renamed by Colab (`name (2).wav`) in a way that used to break inference.
+10. **Cell 8 — run inference on each uploaded clip, then download its
+    output JSON immediately after.** One pass per file, each writing to its
+    own `exp/audio2exp_<clip name>` folder (derived from the filename), so
+    clips never overwrite each other's output — and each one gets found and
+    downloaded right away rather than guessed at afterward. If cell 6's
+    `find` output showed a different weight path than the one hardcoded
+    here, **edit the `weight=` argument before running this cell.**
+11. **Convert each downloaded JSON** with `parse_a2e.py` exactly as in the
     local steps below (step 6 there), then wire it into a scene manifest
     (step 7).
 
@@ -408,7 +410,7 @@ next**, rather than running the whole notebook blindly end to end.
    python inference.py --config-file configs/lam_audio2exp_config_streaming.py \
      --options save_path="exp/audio2exp" save_json_path="exp/audio2exp/output.json" \
      weight=pretrained_models/lam_audio2exp_streaming.tar \
-     audio_input="/path/to/your_audio.wav" brow_movement=True
+     audio_input="/path/to/your_audio.wav" brow_movement=True movement_smooth=True
    ```
    **Keep every path quoted**, even ones that look safe — if your audio
    filename ever contains a space (e.g. a tool auto-renames a duplicate
@@ -419,8 +421,9 @@ next**, rather than running the whole notebook blindly end to end.
 
    `brow_movement=True` (decided 2026-10-23) — the streaming config defaults
    this off, meaning no brow motion gets generated at all; turned on for more
-   expressive output. `movement_smooth` and `id_idx` are other untried knobs
-   — see `docs/FACIAL_ANIM_REGEN_NOTES.md`.
+   expressive output. `movement_smooth=True` (added 2026-10-27, still being
+   evaluated) smooths frame-to-frame mouth movement transitions. `id_idx` is
+   the remaining untried knob — see `docs/FACIAL_ANIM_REGEN_NOTES.md`.
    **`save_json_path` is required** — LAM's own README sample command omits
    it (only shows `save_path`), which is a documentation bug on their end:
    `save_path` is just the experiment/log folder (you'll get `infer.log` +

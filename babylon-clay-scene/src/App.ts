@@ -1,6 +1,6 @@
 import { Scene } from "@babylonjs/core/scene";
 import { Engine } from "@babylonjs/core/Engines/engine";
-import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector";
+import { Vector3, Quaternion, Matrix } from "@babylonjs/core/Maths/math.vector";
 import { SceneLoader } from "@babylonjs/core/Loading/sceneLoader";
 import { ImportMeshAsync } from "@babylonjs/core/Loading/sceneLoader";
 import { HavokPlugin } from "@babylonjs/core/Physics/v2/Plugins/havokPlugin";
@@ -35,13 +35,15 @@ import "@babylonjs/materials/sky";
 import "@babylonjs/loaders/glTF";
 
 // Set up minimal BABYLON global — A2FAvatar.js uses BABYLON.ImportMeshAsync
-// and checks BABYLON.VRMFileLoader
+// and checks BABYLON.VRMFileLoader. Matrix is needed for the matrix-based
+// eye-gaze math in _tickGaze (see A2FAvatar.js).
 (window as any).BABYLON = {
 	...(window as any).BABYLON,
 	ImportMeshAsync,
 	SceneLoader,
 	Quaternion,
 	Vector3,
+	Matrix,
 };
 
 // @ts-ignore
@@ -210,7 +212,7 @@ export class App {
 				console.log('[App] WebXR ready — Controls: WASD=move, Space/Ctrl=up/down, Mouse=look around (Click to lock)');
 				
 				const xrCamera = xrHelper.baseExperience.camera;
-				const speed = 500;
+				const speed = 35;
 				let lastFrameTime = performance.now();
 				let isXRActive = false;
 

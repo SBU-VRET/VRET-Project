@@ -21,6 +21,15 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ["@babylonjs/havok"],
+    // Force Vite to pre-bundle these as single units instead of resolving each
+    // deep import path (e.g. "@babylonjs/core/Maths/math.vector") as its own
+    // separate dev-server module. Without this, Babylon's internal singletons
+    // (like Effect.ShadersStore) can end up duplicated across two module
+    // instances — one registers a shader via a side-effect import, the other
+    // (used by PostProcess/Effect internals) can't find it and falls back to
+    // fetching it over HTTP, which 404s to index.html and gets fed to the GLSL
+    // compiler as shader source ("FRAGMENT SHADER ERROR: '<' syntax error").
+    include: ["@babylonjs/core", "@babylonjs/loaders", "@babylonjs/materials", "@babylonjs/gui", "@babylonjs/addons"],
   },
   build: {
     target: 'esnext',

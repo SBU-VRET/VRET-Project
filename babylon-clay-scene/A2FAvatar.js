@@ -99,6 +99,27 @@ export class A2FAvatar {
     this.blinkTimer     = -1;
     this.idleElapsed    = 0;
 
+    // Procedural gaze (eye saccades) -- driven ourselves, same reason as blink:
+    // the generation pipelines (LAM, and Audio2Face before it) don't produce
+    // meaningful eyeLookIn/Out/Up/Down data, so without this the eyes never
+    // move at all. See docs/FACIAL_ANIM_REGEN_NOTES.md "Weak/missing movement
+    // categories". h/v are the currently-applied horizontal/vertical look
+    // amount; gazeTarget is where the current glance is heading toward.
+    this.gazeElapsed = 0;
+    this.gazeTimer   = -1;
+    this.nextGazeAt  = 1 + Math.random() * 2;
+    this.gazeTarget  = { h: 0, v: 0 };
+    this.gazeCurrent = { h: 0, v: 0 };
+
+    // Procedural head sway -- same rationale: LAM's ARKit-52 output has no
+    // head rotation at all (not even present in the format), so a fully
+    // static head is a strong "not alive" signal. Set once the head bone is
+    // found in _loadVRM; left null if no bone named "head" turns up (not
+    // every rig necessarily uses that exact name).
+    this.headBone      = null;
+    this._headRestQuat = null;
+    this.headSwayElapsed = 0;
+
     // Transition state
     this.transitionDuration  = 0.25;
     this.transitionElapsed   = 0;
@@ -179,6 +200,61 @@ export class A2FAvatar {
     if (!this.faceMesh) {
       console.error('[A2FAvatar] H_DDS_HighRes mesh not found. Available meshes:',
         this.scene.meshes.map(m => m.name));
+    }
+
+    // Find the head bone for procedural sway. Exact match first ("head" is
+    // VRM's standard humanoid bone name), falling back to a substring match
+    // for rigs that don't follow it exactly -- same two-tier approach as
+    // App.ts's arm-bone lookup, since naming isn't fully consistent across
+    // the avatar library. Excludes "headtop"-style end-effector joints some
+    // rigs include, which would otherwise false-match the substring check.
+    const allNodes = [...ownMeshes, ...result.transformNodes];
+    this.headBone = allNodes.find(n => n.name.toLowerCase() === 'head')
+      || allNodes.find(n => n.name.toLowerCase().includes('head') && !n.name.toLowerCase().includes('top'))
+      || null;
+
+    if (this.headBone) {
+      if (!this.headBone.rotationQuaternion) {
+        this.headBone.rotationQuaternion = BABYLON.Quaternion.FromEulerVector(this.headBone.rotation || BABYLON.Vector3.Zero());
+      }
+      this._headRestQuat = this.headBone.rotationQuaternion.clone();
+    } else {
+      console.warn('[A2FAvatar] No head bone found for procedural sway. Available nodes:',
+        allNodes.map(n => n.name));
+    }
+
+    // Find eye bones for procedural gaze. This model's face mesh has NO
+    // eyeLookIn/Out/Up/Down blendshapes at all (confirmed by parsing the VRM
+    // directly) -- gaze on this rig is bone-driven, not blendshape-driven,
+    // same situation as the head. Exact match, excluding "_end" helper
+    // joints some rigs attach past the real eye bone.
+    this.leftEyeBone  = allNodes.find(n => n.name.toLowerCase() === 'lefteye')
+      || allNodes.find(n => n.name.toLowerCase().includes('lefteye') && !n.name.toLowerCase().includes('end'))
+      || null;
+    this.rightEyeBone = allNodes.find(n => n.name.toLowerCase() === 'righteye')
+      || allNodes.find(n => n.name.toLowerCase().includes('righteye') && !n.name.toLowerCase().includes('end'))
+      || null;
+
+    for (const [bone, label] of [[this.leftEyeBone, 'left'], [this.rightEyeBone, 'right']]) {
+      if (bone && !bone.rotationQuaternion) {
+        bone.rotationQuaternion = BABYLON.Quaternion.FromEulerVector(bone.rotation || BABYLON.Vector3.Zero());
+      }
+    }
+    // Local rest rotation (same pattern as headBone) -- this is what
+    // _tickGaze uses. NOT caching a world-space rest quaternion here: at
+    // this point in load, App.ts hasn't yet applied the avatar's rootNode
+    // rotation (its in-scene facing direction), so a world snapshot taken
+    // now would be stale by however much the root gets rotated after this
+    // -- that caused a ~120-240 degree mismatch ("eyes look inside out").
+    // _tickGaze instead derives the eye's current world rest orientation
+    // fresh each frame from this local quaternion + the bone's live parent
+    // world rotation, which stays correct regardless of root/head motion.
+    this._leftEyeRestQuat  = this.leftEyeBone  ? this.leftEyeBone.rotationQuaternion.clone()  : null;
+    this._rightEyeRestQuat = this.rightEyeBone ? this.rightEyeBone.rotationQuaternion.clone() : null;
+
+    if (!this.leftEyeBone && !this.rightEyeBone) {
+      console.warn('[A2FAvatar] No eye bones found for procedural gaze. Available nodes:',
+        allNodes.map(n => n.name));
     }
   }
 
@@ -359,6 +435,7 @@ export class A2FAvatar {
 
   _tickIdle(dt) {
     this._tickBlink(dt);
+    this._tickGaze(dt);
 
     // Breathing — not driven during PLAYING, where real speech jaw movement must win
     const cfg = this.idleConfig;
@@ -395,6 +472,124 @@ export class A2FAvatar {
           cfg.blinkIntervalMin + Math.random() * (cfg.blinkIntervalMax - cfg.blinkIntervalMin);
       }
     }
+  }
+
+  // Eye saccades only — also called from _tickPlaying. Bone-driven, not
+  // blendshape-driven: this model's face mesh has no eyeLookIn/Out/Up/Down
+  // morph targets at all (confirmed by parsing the VRM directly), so the
+  // original blendshape version of this method silently did nothing --
+  // _applyShape no-ops for a name that isn't in faceMap. Rotates the real
+  // eye bones instead, same approach as _tickHeadSway. Picks a small random
+  // glance target at a random interval, eases into it, holds briefly, eases
+  // back to neutral, repeats. h/v are a shared horizontal/vertical look
+  // amount applied as yaw/pitch to both eye bones identically (unlike the
+  // old blendshape convention, a bone doesn't need separate "In"/"Out"
+  // naming per eye -- both eyes just rotate the same real-world direction).
+  _tickGaze(dt) {
+    if (!this.leftEyeBone && !this.rightEyeBone) return;
+    this.gazeElapsed += dt;
+
+    if (this.gazeTimer < 0) {
+      if (this.gazeElapsed >= this.nextGazeAt) {
+        // Amplitude tuned down from an initial 0.3/0.2 rad (~17/11 deg),
+        // which looked like a dramatic eye-roll rather than a subtle glance
+        // once the rotation math was actually correct. Adjust further if
+        // this still reads as too much or too little.
+        this.gazeTarget = {
+          h: (Math.random() * 2 - 1) * 0.12,
+          v: (Math.random() * 2 - 1) * 0.06,
+        };
+        this.gazeTimer = 0;
+      }
+    }
+
+    if (this.gazeTimer >= 0) {
+      this.gazeTimer += dt;
+      const easeDuration = 0.35;
+      const holdDuration = 1.2;
+
+      if (this.gazeTimer < easeDuration) {
+        const t = this.gazeTimer / easeDuration;
+        this.gazeCurrent = { h: this.gazeTarget.h * t, v: this.gazeTarget.v * t };
+      } else if (this.gazeTimer < easeDuration + holdDuration) {
+        this.gazeCurrent = { ...this.gazeTarget };
+      } else if (this.gazeTimer < easeDuration * 2 + holdDuration) {
+        const t = (this.gazeTimer - easeDuration - holdDuration) / easeDuration;
+        this.gazeCurrent = { h: this.gazeTarget.h * (1 - t), v: this.gazeTarget.v * (1 - t) };
+      } else {
+        this.gazeCurrent = { h: 0, v: 0 };
+        this.gazeTimer = -1;
+        this.nextGazeAt = this.gazeElapsed + 1.5 + Math.random() * 2.5;
+      }
+    }
+
+    const { h, v } = this.gazeCurrent;
+    // Matrix-based world-space composition, re-applied 2026-10-27 (replacing
+    // a pure-quaternion version of the same idea). The avatar's root node
+    // has a (1,1,-1) mirrored scale baked in from export, which a quaternion
+    // can't represent -- Babylon's Matrix.decompose() silently compensates
+    // for that by flipping an axis sign whenever it decomposes a matrix with
+    // a reflection in it, and that compensation gets baked into whatever
+    // quaternion comes out, corrupting any further quaternion math done
+    // with it. Matrices don't have this problem (a reflection is just a
+    // normal, lossless matrix), so this version stays in matrix form for
+    // the whole rest->offset->local computation and only decomposes once,
+    // at the very end, on the final LOCAL matrix -- which has the parent's
+    // mirror divided back out by then, so it decomposes cleanly without
+    // needing that compensation. Both eyes get the same world-space offset
+    // regardless of their own local axis conventions, which is what should
+    // make this robust to Black's confirmed mismatched left/right rest axes
+    // (see git history) without any per-eye sign correction.
+    const offsetMatrix = BABYLON.Matrix.Identity();
+    BABYLON.Matrix.FromQuaternionToRef(BABYLON.Quaternion.RotationYawPitchRoll(h, v, 0), offsetMatrix);
+
+    for (const [bone, restLocalQuat] of [
+      [this.leftEyeBone, this._leftEyeRestQuat],
+      [this.rightEyeBone, this._rightEyeRestQuat],
+    ]) {
+      if (!bone) continue;
+
+      const restLocalMatrix = BABYLON.Matrix.Identity();
+      BABYLON.Matrix.FromQuaternionToRef(restLocalQuat, restLocalMatrix);
+
+      let parentWorldMatrix = BABYLON.Matrix.Identity();
+      if (bone.parent) {
+        bone.parent.computeWorldMatrix(true);
+        parentWorldMatrix = bone.parent.getWorldMatrix();
+      }
+
+      // world = local * parentWorld (Babylon's row-vector convention)
+      const restWorldMatrix = restLocalMatrix.multiply(parentWorldMatrix);
+      const desiredWorldMatrix = restWorldMatrix.multiply(offsetMatrix);
+      const newLocalMatrix = desiredWorldMatrix.multiply(BABYLON.Matrix.Invert(parentWorldMatrix));
+
+      const scale = new BABYLON.Vector3();
+      const rot = new BABYLON.Quaternion();
+      const pos = new BABYLON.Vector3();
+      newLocalMatrix.decompose(scale, rot, pos);
+      bone.rotationQuaternion = rot;
+    }
+  }
+
+  // Procedural head sway -- bone rotation, not a blendshape, so unlike blink/
+  // gaze it doesn't go through _applyShape and isn't at risk of being
+  // overwritten by per-frame animation data (frame data only ever touches
+  // face morph targets). Runs unconditionally every tick regardless of
+  // state -- see _tick() below -- rather than being called per-state like
+  // blink/gaze. Small mismatched sine frequencies per axis so it doesn't
+  // read as a metronome; applied as an offset multiplied onto the bone's
+  // original rest rotation, never replacing it.
+  _tickHeadSway(dt) {
+    if (!this.headBone) return;
+    this.headSwayElapsed += dt;
+    const t = this.headSwayElapsed;
+
+    const pitch = Math.sin(t * 0.37) * 0.035 + Math.sin(t * 0.91 + 1.3) * 0.015;
+    const yaw   = Math.sin(t * 0.29 + 0.6) * 0.05 + Math.sin(t * 0.77 + 2.1) * 0.02;
+    const roll  = Math.sin(t * 0.23 + 2.4) * 0.02;
+
+    const offset = BABYLON.Quaternion.RotationYawPitchRoll(yaw, pitch, roll);
+    this.headBone.rotationQuaternion = this._headRestQuat.multiply(offset);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -474,6 +669,7 @@ export class A2FAvatar {
     }
 
     this._tickBlink(dt);
+    this._tickGaze(dt);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -487,16 +683,30 @@ export class A2FAvatar {
     const dt = (now - this._lastTickMs) / 1000;
     this._lastTickMs = now;
 
-    switch (this.state) {
-      case State.IDLE:
-        this._tickIdle(dt);
-        break;
-      case State.PLAYING:
-        this._tickPlaying(dt);
-        break;
-      case State.TRANSITIONING:
-        this._tickTransition(dt);
-        break;
+    // Wrapped in try/catch: this runs on scene.onBeforeRenderObservable, which
+    // does NOT catch exceptions from its observers -- an uncaught throw here
+    // previously killed Babylon's entire render loop (white screen / stuck
+    // loading screen), traced back to the procedural gaze code referencing a
+    // BABYLON.* symbol missing from App.ts's minimal window.BABYLON shim.
+    try {
+      this._tickHeadSway(dt);
+
+      switch (this.state) {
+        case State.IDLE:
+          this._tickIdle(dt);
+          break;
+        case State.PLAYING:
+          this._tickPlaying(dt);
+          break;
+        case State.TRANSITIONING:
+          this._tickTransition(dt);
+          break;
+      }
+    } catch (e) {
+      if (!this._tickErrorLogged) {
+        this._tickErrorLogged = true;
+        console.error('[A2FAvatar] Error in animation tick (further errors suppressed):', e);
+      }
     }
   }
 
