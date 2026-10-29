@@ -4,6 +4,9 @@ A Vite + Babylon.js + TypeScript demo: animated VRM avatars with audio-driven fa
 
 This README is a living overview of the folder — extend it as new files/folders get added or as their role changes.
 
+**Want to add a new talking character?** See
+[`CREATING_A_SCENE.md`](./CREATING_A_SCENE.md) for the full walkthrough.
+
 ## Quick start
 
 ```

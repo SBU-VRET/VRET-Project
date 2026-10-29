@@ -95,6 +95,21 @@ the matching default from `A2FAvatar` constructor defaults
 | `breathCycleSpeed` | number | 0.4     | Breathing frequency multiplier                           |
 | `breathJawAmount`  | number | 0.012   | How far the jaw opens at peak inhale (morph weight 0–1)  |
 
+### Head sway and eye gaze (not in `scene.json`)
+Two more idle behaviors run alongside blink/breathing — `_tickHeadSway()`
+and `_tickGaze()` in `A2FAvatar.js`. Neither is driven by generated
+animation data (LAM's ARKit-52 output has no head pose at all, and this
+avatar rig has no gaze blendshapes), so both are driven procedurally in
+code instead, the same way blink is. Unlike the `idle` fields above,
+their amplitude/timing constants are hardcoded in `A2FAvatar.js`, not
+exposed through `scene.json` — there was no need yet to vary them
+per-avatar. Head sway rotates the head bone with small mismatched sine
+waves; eye gaze picks random small glances and rotates the `LeftEye`/
+`RightEye` bones to match, doing the rest-pose/offset math in 4x4
+matrices (not quaternions) since the avatar's mirrored export scale
+corrupts quaternion math partway through — see the gitignored
+`docs/FACIAL_ANIM_REGEN_NOTES.md` for the full debugging history.
+
 ### `clips` (array, required)
 Played in array order by `avatar.playSequence()`. Each entry:
 
@@ -410,7 +425,7 @@ next**, rather than running the whole notebook blindly end to end.
    python inference.py --config-file configs/lam_audio2exp_config_streaming.py \
      --options save_path="exp/audio2exp" save_json_path="exp/audio2exp/output.json" \
      weight=pretrained_models/lam_audio2exp_streaming.tar \
-     audio_input="/path/to/your_audio.wav" brow_movement=True movement_smooth=True
+     audio_input="/path/to/your_audio.wav" brow_movement=True
    ```
    **Keep every path quoted**, even ones that look safe — if your audio
    filename ever contains a space (e.g. a tool auto-renames a duplicate
@@ -421,9 +436,9 @@ next**, rather than running the whole notebook blindly end to end.
 
    `brow_movement=True` (decided 2026-10-23) — the streaming config defaults
    this off, meaning no brow motion gets generated at all; turned on for more
-   expressive output. `movement_smooth=True` (added 2026-10-27, still being
-   evaluated) smooths frame-to-frame mouth movement transitions. `id_idx` is
-   the remaining untried knob — see `docs/FACIAL_ANIM_REGEN_NOTES.md`.
+   expressive output. `movement_smooth=True` was tried 2026-10-27 and dropped
+   — no measurable effect on our clips. `id_idx` is the remaining untried
+   knob — see `docs/FACIAL_ANIM_REGEN_NOTES.md`.
    **`save_json_path` is required** — LAM's own README sample command omits
    it (only shows `save_path`), which is a documentation bug on their end:
    `save_path` is just the experiment/log folder (you'll get `infer.log` +

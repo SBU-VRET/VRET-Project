@@ -34,6 +34,20 @@ import "@babylonjs/materials/sky";
 
 import "@babylonjs/loaders/glTF";
 
+// Pulls in the rest of @babylonjs/core's shader registrations (every
+// Effect.ShadersStore entry, not just the ones reached by the deep imports
+// above). Added 2026-10-28 after repeatedly hitting "FRAGMENT SHADER ERROR"
+// with the fetched source being index.html -- a specific post-process
+// effect's shader (used internally by the depth/prePass renderer components
+// imported above) wasn't in Vite's pre-bundled dependency graph, since
+// nothing we import reaches it directly, so Babylon fell back to fetching
+// it over HTTP, 404'd, and got Vite's SPA fallback HTML instead. This is a
+// known Babylon side effect: importing it also populates `window.BABYLON`
+// with every class (guarded by `if (!BABYLONGLOBAL[key])`, so it never
+// overwrites what we set explicitly below), which also makes the minimal
+// shim below effectively a fallback rather than the only source of truth.
+import "@babylonjs/core/Legacy/legacy";
+
 // Set up minimal BABYLON global — A2FAvatar.js uses BABYLON.ImportMeshAsync
 // and checks BABYLON.VRMFileLoader. Matrix is needed for the matrix-based
 // eye-gaze math in _tickGaze (see A2FAvatar.js).
@@ -203,6 +217,26 @@ export class App {
 			console.error('[App] Avatar setup failed:', e);
 		}
 
+		try {
+			console.log('[App] Testing runtime .glb loading...');
+			// First step of VRE-102 -- just the runtime loading mechanism itself.
+			// Still no VRET SceneJSON schema for referencing .glb objects by path
+			// with a position/rotation/scale -- that's VRE-107, still needs a
+			// sync with Amanda/Coco (see docs/PROJECT_GAPS.md). This is a real
+			// test asset (a temporary stand-in, not yet one of Kevin's actual
+			// exports) placed with a hardcoded transform for now, same as the
+			// avatars above, just to confirm this loading path actually works
+			// end to end with a non-VRM .glb. Position/scale picked by eye --
+			// adjust once you see how it actually looks against the avatars.
+			await this._loadGlbAsset(`${import.meta.env.BASE_URL}objects/arunangshubanerjee-police-car-2064.glb`, false, {
+				position: new Vector3(5100, 5.5, -800),
+				scaling: new Vector3(800, 800, 800),
+			});
+			console.log('[App] Runtime .glb load test succeeded');
+		} catch (e) {
+			console.error('[App] Runtime .glb load test failed:', e);
+		}
+
 		console.log('[App] Initializing WebXR...');
 		try {
 			const xrHelper = await WebXRDefaultExperience.CreateAsync(this.scene);
@@ -281,6 +315,32 @@ export class App {
 
 		// Build clip playback UI
 		this._createAvatarUI(avatar, secondCharacter);
+	}
+
+	/**
+	 * Loads a single .glb (or VRM, same loader) asset into the scene at
+	 * runtime. This is the reusable mechanism VRE-102 asks for -- environment/
+	 * object assets Kevin exports, loaded individually instead of pre-combined
+	 * into the base `.babylon` scene via the Editor. Positioning is left to
+	 * the caller; there's no manifest schema driving this yet (see the test
+	 * call above in `_handleLoad` for why).
+	 */
+	private async _loadGlbAsset(
+		path: string,
+		hideAfterLoad: boolean = false,
+		transform?: { position?: Vector3; rotation?: Vector3; scaling?: Vector3 }
+	) {
+		const result = await ImportMeshAsync(path, this.scene!, { pluginExtension: ".glb" });
+		const root = result.meshes[0] ?? null;
+		if (root && transform) {
+			if (transform.position) root.position = transform.position;
+			if (transform.rotation) root.rotation = transform.rotation;
+			if (transform.scaling) root.scaling = transform.scaling;
+		}
+		if (hideAfterLoad) {
+			result.meshes.forEach((m) => m.setEnabled(false));
+		}
+		return result;
 	}
 
 	private _createAvatarUI(avatar: any, secondCharacter:any): void {
