@@ -1,0 +1,343 @@
+{
+	"asset":
+	{
+		"version": "2.0",
+		"generator": "Unreal Engine 5.6.1"
+	},
+	"scene": 0,
+	"accessors": [
+		{
+			"bufferView": 0,
+			"count": 36,
+			"type": "SCALAR",
+			"componentType": 5121
+		},
+		{
+			"bufferView": 1,
+			"count": 24,
+			"type": "VEC3",
+			"componentType": 5126,
+			"min": [ -1.27999997, -1.27999997, -1.27999997 ],
+			"max": [ 1.27999997, 1.27999997, 1.27999997 ]
+		},
+		{
+			"bufferView": 2,
+			"count": 24,
+			"type": "VEC3",
+			"componentType": 5126
+		},
+		{
+			"bufferView": 3,
+			"count": 24,
+			"type": "VEC4",
+			"componentType": 5126
+		},
+		{
+			"bufferView": 4,
+			"count": 24,
+			"type": "VEC2",
+			"componentType": 5126
+		},
+		{
+			"bufferView": 5,
+			"count": 24,
+			"type": "VEC2",
+			"componentType": 5126
+		},
+		{
+			"bufferView": 6,
+			"count": 24,
+			"type": "VEC2",
+			"componentType": 5126
+		},
+		{
+			"bufferView": 7,
+			"count": 24,
+			"type": "VEC2",
+			"componentType": 5126
+		}
+	],
+	"buffers": [
+		{
+			"uri": "clay_ave_rd.bin",
+			"byteLength": 1764
+		}
+	],
+	"bufferViews": [
+		{
+			"buffer": 0,
+			"byteLength": 36,
+			"target": 34963
+		},
+		{
+			"buffer": 0,
+			"byteLength": 288,
+			"byteOffset": 36,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 288,
+			"byteOffset": 324,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 384,
+			"byteOffset": 612,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 192,
+			"byteOffset": 996,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 192,
+			"byteOffset": 1188,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 192,
+			"byteOffset": 1380,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 192,
+			"byteOffset": 1572,
+			"target": 34962
+		}
+	],
+	"materials": [
+		{
+			"name": "M_SimpleOpaqueBlaqAsphalt",
+			"pbrMetallicRoughness":
+			{
+				"baseColorFactor": [ 0.0197919998, 0.0197919998, 0.0197919998, 1 ],
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "M_SimpleOpaqueYelloq",
+			"pbrMetallicRoughness":
+			{
+				"baseColorFactor": [ 1, 0.869313002, 0.000569999975, 1 ],
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "M_SimpleOpaque",
+			"pbrMetallicRoughness":
+			{
+				"baseColorFactor": [ 0.400000006, 0.400000006, 0.400000006, 1 ],
+				"metallicFactor": 0,
+				"roughnessFactor": 0.5
+			}
+		},
+		{
+			"name": "M_SimpleOpaqueCurb",
+			"pbrMetallicRoughness":
+			{
+				"baseColorFactor": [ 0.0572919995, 0.0413700007, 0.0169849992, 1 ],
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "M_SimpleOpaqueSidewalk",
+			"pbrMetallicRoughness":
+			{
+				"baseColorFactor": [ 0.136457995, 0.0985350013, 0.0404549986, 1 ],
+				"metallicFactor": 0
+			}
+		}
+	],
+	"meshes": [
+		{
+			"name": "Cube",
+			"primitives": [
+				{
+					"attributes":
+					{
+						"POSITION": 1,
+						"NORMAL": 2,
+						"TANGENT": 3,
+						"TEXCOORD_0": 4,
+						"TEXCOORD_1": 5,
+						"TEXCOORD_2": 6,
+						"TEXCOORD_3": 7
+					},
+					"indices": 0,
+					"material": 0
+				}
+			]
+		},
+		{
+			"name": "Cube",
+			"primitives": [
+				{
+					"attributes":
+					{
+						"POSITION": 1,
+						"NORMAL": 2,
+						"TANGENT": 3,
+						"TEXCOORD_0": 4,
+						"TEXCOORD_1": 5,
+						"TEXCOORD_2": 6,
+						"TEXCOORD_3": 7
+					},
+					"indices": 0,
+					"material": 1
+				}
+			]
+		},
+		{
+			"name": "Cube",
+			"primitives": [
+				{
+					"attributes":
+					{
+						"POSITION": 1,
+						"NORMAL": 2,
+						"TANGENT": 3,
+						"TEXCOORD_0": 4,
+						"TEXCOORD_1": 5,
+						"TEXCOORD_2": 6,
+						"TEXCOORD_3": 7
+					},
+					"indices": 0,
+					"material": 2
+				}
+			]
+		},
+		{
+			"name": "Cube",
+			"primitives": [
+				{
+					"attributes":
+					{
+						"POSITION": 1,
+						"NORMAL": 2,
+						"TANGENT": 3,
+						"TEXCOORD_0": 4,
+						"TEXCOORD_1": 5,
+						"TEXCOORD_2": 6,
+						"TEXCOORD_3": 7
+					},
+					"indices": 0,
+					"material": 3
+				}
+			]
+		},
+		{
+			"name": "Cube",
+			"primitives": [
+				{
+					"attributes":
+					{
+						"POSITION": 1,
+						"NORMAL": 2,
+						"TANGENT": 3,
+						"TEXCOORD_0": 4,
+						"TEXCOORD_1": 5,
+						"TEXCOORD_2": 6,
+						"TEXCOORD_3": 7
+					},
+					"indices": 0,
+					"material": 4
+				}
+			]
+		}
+	],
+	"nodes": [
+		{
+			"name": "MainRoad",
+			"rotation": [ -0, -0.707106829, 0, 0.707106829 ],
+			"scale": [ 1, 1, 2 ],
+			"children": [ 1, 4, 7, 8, 9, 10, 11, 12 ]
+		},
+		{
+			"name": "RoadBase",
+			"translation": [ 1.6624999, 0, 0 ],
+			"scale": [ 1.29999995, 0.0500000007, 30 ],
+			"mesh": 0,
+			"children": [ 2, 3 ]
+		},
+		{
+			"name": "roaddivider2",
+			"translation": [ -1.40199983, 0.099999994, -2.54313148e-09 ],
+			"scale": [ 0.0461538471, 1, 1 ],
+			"mesh": 1
+		},
+		{
+			"name": "roaddivider3",
+			"translation": [ -4.25999975, 0.099999994, 0 ],
+			"scale": [ 0.0461538471, 1, 1 ],
+			"mesh": 2
+		},
+		{
+			"name": "RoadBase1",
+			"translation": [ -1.6624999, 0, 0 ],
+			"scale": [ 1.29999995, 0.0500000007, 30 ],
+			"mesh": 0,
+			"children": [ 5, 6 ]
+		},
+		{
+			"name": "roaddivider1",
+			"translation": [ 1.40199983, 0.099999994, 2.54313148e-09 ],
+			"scale": [ 0.0461538471, 1, 1 ],
+			"mesh": 1
+		},
+		{
+			"name": "roaddivider4",
+			"translation": [ 4.25999975, 0.099999994, 0 ],
+			"scale": [ 0.0461538471, 1, 1 ],
+			"mesh": 2
+		},
+		{
+			"name": "RoadBase2",
+			"translation": [ -4.27999973, 0, -1.52587887e-07 ],
+			"scale": [ 1, 0.0500000007, 30 ],
+			"mesh": 0
+		},
+		{
+			"name": "RoadBase3",
+			"translation": [ 4.27999973, 0, 1.52587887e-07 ],
+			"scale": [ 1, 0.0500000007, 30 ],
+			"mesh": 0
+		},
+		{
+			"name": "Curb1",
+			"translation": [ 5.65999985, 0.099999994, 0 ],
+			"scale": [ 0.100000001, 0.150000006, 30 ],
+			"mesh": 3
+		},
+		{
+			"name": "Curb2",
+			"translation": [ -5.65999985, 0.099999994, 0 ],
+			"scale": [ 0.100000001, 0.150000006, 30 ],
+			"mesh": 3
+		},
+		{
+			"name": "Sidewalk1",
+			"translation": [ 6.70999908, 0.099999994, 3.05175774e-07 ],
+			"scale": [ 0.75, 0.119999997, 30 ],
+			"mesh": 4
+		},
+		{
+			"name": "Sidewalk2",
+			"translation": [ -6.70999908, 0.099999994, -3.05175774e-07 ],
+			"scale": [ 0.75, 0.119999997, 30 ],
+			"mesh": 4
+		}
+	],
+	"scenes": [
+		{
+			"name": "Lvl_FirstPerson",
+			"nodes": [ 0 ]
+		}
+	]
+}
