@@ -1,0 +1,15 @@
+{
+  "objects": [
+    {
+      "asset": "objects/arunangshubanerjee-police-car-2064.glb",
+      "instances": [
+        {
+          "id": "police_car_1",
+          "position": [5100, 5.5, -800],
+          "rotation": [0, 0, 0],
+          "scaling": [800, 800, 800]
+        }
+      ]
+    }
+  ]
+}

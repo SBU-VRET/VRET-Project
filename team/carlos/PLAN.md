@@ -10,7 +10,7 @@ Carlos wasn't given a dedicated task slide in the kickoff deck — as a voluntee
 or could use an extra hand. Rather than a fixed week-by-week table like the other
 plans, this is a menu of task types plus how to pick each week's focus.
 
-**Note:** Carlos doesn't currently carry a standing weekly assignment.
+**Note:** Carlos doesn't currently carry a standing weekly assignment, with one exception as of 10/30: the "regular" (non-idle) VRMA body-animation track — CMU `vrma/` library testing, chained-clip playback, rigging issues, and the transition-snapping/teleporting bug — is his to own going forward. Idle animation (procedural sway/gaze/breathing, the Text to VRMA vs. ARDY decision for idle loops) stays under Fahim's discretion; the two tracks feed into the same idle-animation integration work but are owned separately.
 
 ## How to pick the week's task
 
@@ -40,8 +40,8 @@ would help" work that week, then pick from the menu below.
 |---|---|---|
 | [ ] 9/21 – 10/4 | Research support — documentation/notes now owned by Fahim; assist Jayden's lit review or Amanda/Coco's research tasks during onboarding; listen to the voice-line recordings on the shared Google Drive and give input on VRE-29's first-scene framing questions |
 | [ ] 10/5 – 10/25 | QA/playtesting as builds start coming together (Fahim's baseline build, Kevin's first device build) |
-| [ ] 10/26 | Research support — research the body-animation options in `docs/TECH_PIPELINE.md` Stage 7 (CMU `vrma/` library reuse, Text to VRMA, ARDY), compare feasibility/quality/effort for each, feed findings back to Fahim ahead of the idle-animation decision slated for week of 11/9 |
-| [ ] 10/27 – 11/15 | QA/playtesting as builds start coming together (Fahim's baseline build, Kevin's first device build) |
+| [ ] 10/26 | Research support — research the body-animation options in `docs/TECH_PIPELINE.md` Stage 7 (CMU `vrma/` library reuse, Text to VRMA, ARDY), compare feasibility/quality/effort for each; made substantial progress testing existing `.vrma` files, found possible rigging issues, now investigating |
+| [ ] 10/30 – 11/15 | Now the owner (10/30) of the "regular" VRMA body-animation track — continue testing chained VRMA playback against the old TLTMedia demo, investigate the transition-snapping/teleporting bug (root-position changes in mocap animations), and explore Option B (ARDY + Text-to-VRMA) next; sync findings with Fahim for idle-animation integration, QA/playtesting as time allows |
 | [ ] 11/16 – 12/7 | Research support for Jayden's literature review and IRB prep, or wrap-up documentation |
 
 ## Winter Gap (Dec 10 – Jan 24)

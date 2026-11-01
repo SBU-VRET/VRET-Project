@@ -136,6 +136,57 @@ Played in array order by `avatar.playSequence()`. Each entry:
   { "id": "wait_2", "animation": null, "audio": null, "delayAfter": 23 }
   ```
 
+## 2b. Environment object manifest (`environment.json`)
+
+Separate from the per-character `scene.json` files above — this one lists
+environment/prop `.glb` assets (cars, trees, props Kevin exports from
+Unreal or sources prebuilt) and where to place them. Loaded by
+`App._loadEnvironmentObjects()` ([src/App.ts](src/App.ts)), which calls the
+same `_loadGlbAsset()` helper VRM avatar loading uses under the hood
+(`ImportMeshAsync` with `pluginExtension: ".glb"`).
+
+```json
+{
+  "objects": [
+    {
+      "asset": "objects/arunangshubanerjee-police-car-2064.glb",
+      "instances": [
+        { "id": "police_car_1", "position": [5100, 5.5, -800], "rotation": [0, 0, 0], "scaling": [800, 800, 800] }
+      ]
+    }
+  ]
+}
+```
+
+- `objects` — array, one entry per distinct asset.
+  - `asset` (string, required) — path under `public/`, e.g. `objects/foo.glb`.
+  - `instances` (array, required) — one entry per placement of that asset.
+    Grouped this way (not one full block per instance) so many copies of
+    the same prop don't each repeat the asset path — see the "no designed
+    way to position new runtime-loaded `.glb` objects" gap in
+    `docs/PROJECT_GAPS.md`.
+    - `id` (string, optional) — free-form name, logged if the instance
+      fails to load.
+    - `position` / `rotation` / `scaling` (`[x, y, z]`, all optional) —
+      plain Babylon scene-space values, same convention already used for
+      avatar placement in `App.ts` (`rotation` is Euler radians, not a
+      quaternion). Any field left out keeps Babylon's default for that
+      transform (position `[0,0,0]`, rotation `[0,0,0]`, scale `[1,1,1]`).
+
+**Coordinate system note:** this schema doesn't do any Unreal/Babylon
+axis-mismatch handling of its own — the `.glb` export itself is
+responsible for correct orientation via the standard glTF axis convention
+(Y-up), the same as it already is for the avatar `.vrm` files, which load
+through this exact mechanism too. `position`/`rotation`/`scaling` here are
+just where to place the already-correctly-oriented asset in the scene.
+
+One instance failing to load is logged and skipped, not fatal to the rest
+of the environment or the scene load as a whole.
+
+Still open: no visual placement tool exists, so values are currently
+entered by eye/trial-and-error (see `public/environment.json`'s one real
+example, tuned this way against the existing avatar positions).
+
 ---
 
 ## 3. Per-clip animation JSON schema
@@ -191,6 +242,14 @@ it. Audio2Face-3D itself still exists and can be self-hosted, but that needs
 real GPU hardware — see `docs/AUDIO2FACE_VS_AUDIO2EXPRESSION.md` for the
 updated tradeoff against LAM Audio2Expression now that this no longer avoids
 local GPU strain.
+
+**Update (2026-10-29):** the real self-hosting steps are written up in
+`docs/AUDIO2FACE_VS_AUDIO2EXPRESSION.md` (Docker Compose + NGC API key, a
+separate Python client). Worth noting: that client takes the same
+`--apikey`/`--function-id` shape this script already uses below — self-
+hosting might just mean pointing this existing script at a local container
+address instead of `grpc.nvcf.nvidia.com`, rather than needing a new one.
+Not yet tested; this script still targets the dead cloud endpoint as written.
 
 Script: [animations/a2f_extractor.py](animations/a2f_extractor.py), ported over
 from the legacy TLTMedia repo (`a2f_extractor.py`, added by JunGu Kang) and

@@ -36,7 +36,7 @@ Both of you own the automation script together; this split is a starting point, 
 | [ ] 10/12 | Research + storyline start | Compile faster-generation research findings; start researching choice-based storyline mechanics |
 | [ ] 10/19 | Automation script scoping | With Amanda, define automation script inputs/outputs (avatar list + dialogue script → `scene_XX.json` skeleton) |
 | [ ] 10/26 | **Priority shift: scene asset population** | Faculty-directed reprioritization (confirmed again at 10/16 meeting — build out scene assets before moving to automation). With Amanda: first establish a realistic, populated scene; figure out how to bound the Clay Ave scene's visible distance (what appears beyond the immediate scene boundaries — consider whether a skybox or a world-building tool is the right approach); compile the list of necessary assets (cars, pedestrians, props/objects) needed to actually populate the scene. Use the completed scene to guide the subsequent automation work. Shared work: finishes out the mock demo's currently-bare reused environment, and is directly reusable for VRE-29's real-demo build-out — not exclusively one or the other. |
-| [ ] 11/2 | Script build | Continue script build |
+| [ ] 11/2 | Script build | Continue script build; got Unreal installed/running locally (10/30), scheduling time with Kevin/Amanda to finish the scene — currently experimenting with nighttime lighting settings |
 | [ ] 11/9 | Testing | Test the automation script against at least one real scene; fix bugs |
 | [ ] 11/16 | Wrap research | Finalize the choice-based storyline research write-up (feasibility + recommended approach for Spring) |
 | [ ] 11/23 | Thanksgiving (reduced) | Light week, buffer/catch-up |

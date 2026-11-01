@@ -218,23 +218,11 @@ export class App {
 		}
 
 		try {
-			console.log('[App] Testing runtime .glb loading...');
-			// First step of VRE-102 -- just the runtime loading mechanism itself.
-			// Still no VRET SceneJSON schema for referencing .glb objects by path
-			// with a position/rotation/scale -- that's VRE-107, still needs a
-			// sync with Amanda/Coco (see docs/PROJECT_GAPS.md). This is a real
-			// test asset (a temporary stand-in, not yet one of Kevin's actual
-			// exports) placed with a hardcoded transform for now, same as the
-			// avatars above, just to confirm this loading path actually works
-			// end to end with a non-VRM .glb. Position/scale picked by eye --
-			// adjust once you see how it actually looks against the avatars.
-			await this._loadGlbAsset(`${import.meta.env.BASE_URL}objects/arunangshubanerjee-police-car-2064.glb`, false, {
-				position: new Vector3(5100, 5.5, -800),
-				scaling: new Vector3(800, 800, 800),
-			});
-			console.log('[App] Runtime .glb load test succeeded');
+			console.log('[App] Loading environment objects...');
+			await this._loadEnvironmentObjects(`${import.meta.env.BASE_URL}environment.json`);
+			console.log('[App] Environment objects loaded');
 		} catch (e) {
-			console.error('[App] Runtime .glb load test failed:', e);
+			console.error('[App] Environment object loading failed:', e);
 		}
 
 		console.log('[App] Initializing WebXR...');
@@ -322,8 +310,7 @@ export class App {
 	 * runtime. This is the reusable mechanism VRE-102 asks for -- environment/
 	 * object assets Kevin exports, loaded individually instead of pre-combined
 	 * into the base `.babylon` scene via the Editor. Positioning is left to
-	 * the caller; there's no manifest schema driving this yet (see the test
-	 * call above in `_handleLoad` for why).
+	 * the caller -- see `_loadEnvironmentObjects` for the data-driven caller.
 	 */
 	private async _loadGlbAsset(
 		path: string,
@@ -341,6 +328,54 @@ export class App {
 			result.meshes.forEach((m) => m.setEnabled(false));
 		}
 		return result;
+	}
+
+	/**
+	 * Loads `public/environment.json` (VRE-107's placement schema) and places
+	 * every instance it lists via `_loadGlbAsset`. Schema shape:
+	 *   { "objects": [ { "asset": "<path under public/>", "instances": [
+	 *       { "id"?: string, "position"?: [x,y,z], "rotation"?: [x,y,z] (radians),
+	 *         "scaling"?: [x,y,z] } ] } ] }
+	 * Grouped by asset with a list of per-placement instances, rather than one
+	 * full block per instance, so many copies of the same prop (trees, cones,
+	 * etc.) don't each repeat the asset path -- the gap called out in
+	 * docs/PROJECT_GAPS.md. position/rotation/scaling are the same plain
+	 * Babylon scene-space values already used for avatar placement above
+	 * (rotation as Euler radians, not a quaternion) -- the .glb itself is
+	 * responsible for correct orientation via the standard glTF axis
+	 * convention, same as it already is for the avatar VRM files, so this
+	 * schema doesn't need its own Unreal/Babylon axis-mismatch handling.
+	 * One failed instance is logged and skipped, not fatal to the rest.
+	 */
+	private async _loadEnvironmentObjects(manifestPath: string): Promise<void> {
+		const resp = await fetch(manifestPath);
+		if (!resp.ok) throw new Error(`Failed to load environment manifest: HTTP ${resp.status}`);
+		const manifest: {
+			objects: Array<{
+				asset: string;
+				instances: Array<{
+					id?: string;
+					position?: [number, number, number];
+					rotation?: [number, number, number];
+					scaling?: [number, number, number];
+				}>;
+			}>;
+		} = await resp.json();
+
+		for (const obj of manifest.objects ?? []) {
+			const assetPath = `${import.meta.env.BASE_URL}${obj.asset}`;
+			for (const instance of obj.instances ?? []) {
+				try {
+					await this._loadGlbAsset(assetPath, false, {
+						position: instance.position ? new Vector3(...instance.position) : undefined,
+						rotation: instance.rotation ? new Vector3(...instance.rotation) : undefined,
+						scaling: instance.scaling ? new Vector3(...instance.scaling) : undefined,
+					});
+				} catch (e) {
+					console.error(`[App] Failed to load environment instance "${instance.id ?? '(unnamed)'}" of "${obj.asset}":`, e);
+				}
+			}
+		}
 	}
 
 	private _createAvatarUI(avatar: any, secondCharacter:any): void {

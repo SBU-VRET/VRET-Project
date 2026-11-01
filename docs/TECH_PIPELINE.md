@@ -116,24 +116,24 @@ flowchart LR
     Prebuilt["<b>Prebuilt Assets or<br/>Levels (Unreal)</b><br/>(if a good fit exists)"] -->|"already .glb"| GLB
     end
     subgraph F2["🟦 Fahim — runtime loading"]
-    GLB -->|"referenced by path"| SceneJSON["VRET SceneJSON"]
-    SceneJSON -->|"ImportMeshAsync()<br/>at runtime"| AppTS["App.ts"]
+    GLB -->|"referenced by path"| EnvJSON["environment.json<br/>(object placement manifest)"]
+    EnvJSON -->|"_loadEnvironmentObjects()<br/>-> ImportMeshAsync() at runtime"| AppTS["App.ts"]
     end
-    BJSE["💻 <b>Babylon.js Editor</b><br/>(bjse-project)<br/>base scene assembly"] -->|exports| BabylonScene["<b>.babylon scene file</b><br/>public/scene/example.babylon"]
+    BJSE["💻 <b>Unreal project</b><br/>(clay_ave_1, origin/amanda)<br/>base scene assembly"] -->|exports| BabylonScene["<b>.babylon scene file</b><br/>public/scene/example.babylon"]
 
     style K2 stroke:#10AC84,stroke-width:2px
     style F2 stroke:#2E86DE,stroke-width:2px
     classDef tool fill:#6c9bd1,stroke:#2c4a6b,stroke-width:2px,color:#fff;
     classDef artifact fill:#fbe7a1,stroke:#a87f1a,stroke-width:1px,color:#000;
     class Unreal,BJSE,AppTS tool
-    class GLB,Prebuilt,BabylonScene,SceneJSON artifact
+    class GLB,Prebuilt,BabylonScene,EnvJSON artifact
 ```
 
 - Unreal is conditional, not mandatory — only for custom levels/objects when nothing suitable already exists.
 - "Prebuilt" = either prebuilt assets (individual objects) or prebuilt levels (whole environments) — used directly instead of custom authoring when a good fit exists.
 - Either path produces a `.glb` per asset. `BJSE` has no single assigned owner.
-- **Decided:** `.glb` assets are referenced by path in `VRET SceneJSON` and loaded individually at runtime (`ImportMeshAsync` in `App.ts`), not pre-combined into `.babylon` via the Editor — scenes change as a whole and need asset-level swappability. This runtime handoff isn't built yet (see Open Questions).
-- **BJSE vs. the Babylon Engine:** BJSE is an offline editor — assembles the base scene (lights, camera, environment, static geometry) and exports a static `.babylon` file; no role at runtime. The Babylon Engine is the runtime library bundled into the deployed app — reads `.babylon` + `.glb`/VRM files live, in the browser. `VRET SceneJSON`'s assets load into the Engine at runtime, never pre-combined into `.babylon` via BJSE.
+- **Decided and built (10/29):** `.glb` assets are referenced by path in a dedicated **`environment.json`** manifest — not `VRET SceneJSON` as originally planned, see Stage 5 — and loaded individually at runtime (`App._loadEnvironmentObjects()` calling `_loadGlbAsset()` calling `ImportMeshAsync` in `App.ts`), not pre-combined into `.babylon` via the Editor. Objects are grouped by asset path with an `instances` array (position/rotation/scaling per placement) so repeated props don't repeat the asset path. Tested end-to-end with a temp police-car asset; not yet reviewed by Kevin/Amanda/Coco (VRE-107) and no visual placement tool exists yet (coordinates are hand-typed). Full schema writeup in `babylon-clay-scene/ANIMATION_PIPELINE.md` §2b.
+- **BJSE vs. the Babylon Engine:** historically, BJSE (Babylon.js Editor) was meant to assemble the base scene (lights, camera, environment, static geometry) and export a static `.babylon` file, with no role at runtime. **Update (11/1):** the actual recovered editable source for the base scene is a full **Unreal Engine project** (`clay_ave_1`, on the `origin/amanda` git branch), not a BJSE project — Unreal is now the de facto scene-authoring tool for the base environment too, feeding the same `.glb` export path described above. BJSE itself is effectively moot going forward. The Babylon Engine remains the runtime library bundled into the deployed app, reading `.babylon` + `.glb`/VRM files live in the browser; `environment.json`'s assets load into it at runtime, never pre-combined via an editor.
 - Tradeoff: N separate `.glb` loads cost more than one pre-combined file (more round-trips, more draw calls). Mitigate with parallel loading (`Promise.all`, not sequential), Draco/KTX2 compression, and modest poly/texture budgets — this ships to standalone Quest hardware.
 
 ## 3. Voice generation
@@ -202,16 +202,15 @@ flowchart LR
     VRM["VRM file"] -->|"avatar: 'models/...'"| SceneJSON["<b>VRET SceneJSON</b><br/>scene.json / scene2.json"]
     RuntimeJSON["VRET AnimationJSON"] -->|"clip.animation"| SceneJSON
     WAV["audio/*.wav"] -->|"clip.audio"| SceneJSON
-    GLB["Environment/object<br/><b>.glb files</b>"] -->|"referenced by path"| SceneJSON
     end
 
     style S5 stroke:#F39C12,stroke-width:2px
     classDef artifact fill:#fbe7a1,stroke:#a87f1a,stroke-width:1px,color:#000;
-    class VRM,SceneJSON,RuntimeJSON,WAV,GLB artifact
+    class VRM,SceneJSON,RuntimeJSON,WAV artifact
 ```
 
 - `VRET SceneJSON` (`scene.json`/`scene2.json`) is the per-character manifest: which VRM to load, idle/breathing params, and an ordered list of clips pairing one animation JSON with one audio WAV.
-- Also the intended location for environment/object `.glb` references by path (Stage 2) — not yet implemented.
+- Environment/object `.glb` references do **not** live here — they're in a separate `environment.json` manifest instead (Stage 2), loaded independently by `App.ts`.
 
 ## 6. Runtime
 
@@ -230,6 +229,8 @@ flowchart LR
     WAV["audio/*.wav"] -->|"drives playback<br/>timing (lip-sync)"| A2FAvatar
     A2FAvatar -->|"writes morph target<br/>influence values"| LiveAvatar["Synced, animated<br/>avatar (output)"]
     LiveAvatar --> Engine
+    EnvJSON6["environment.json"] -->|"_loadEnvironmentObjects()<br/>-> ImportMeshAsync() per instance"| AppTS
+    AppTS -->|"static meshes added<br/>directly to scene"| Engine
     end
     subgraph K6["🟩 Kevin — device deployment"]
     Engine --> WebXR["WebXRDefaultExperience"]
@@ -241,10 +242,10 @@ flowchart LR
     classDef tool fill:#6c9bd1,stroke:#2c4a6b,stroke-width:2px,color:#fff;
     classDef artifact fill:#fbe7a1,stroke:#a87f1a,stroke-width:1px,color:#000;
     class AppTS,Engine,A2FAvatar,WebXR tool
-    class BabylonScene,SceneJSON,VRM,RuntimeJSON,WAV,LiveAvatar artifact
+    class BabylonScene,SceneJSON,VRM,RuntimeJSON,WAV,LiveAvatar,EnvJSON6 artifact
 ```
 
-- `App.ts` boots the Babylon Engine, loads the base `.babylon` environment, then creates one `A2FAvatar` per character.
+- `App.ts` boots the Babylon Engine, loads the base `.babylon` environment, loads environment/object `.glb` assets via `environment.json` (Stage 2), then creates one `A2FAvatar` per character.
 - `A2FAvatar` is the pipeline's actual end consumer, not another conversion step. Inputs: VRM model, scene manifest, per-clip animation JSON, clip audio WAV. Output: a live, synced avatar — morph-target weights applied every render frame, timed to `audio.currentTime` so lip-sync holds even if a frame renders late.
 - WebXR ships that to the Meta Quest 3/3s, the confirmed deployment target.
 - BJSE vs. Babylon Engine: see Stage 2.
@@ -280,8 +281,8 @@ flowchart LR
 
 ## Open questions / TODO
 - [ ] **Document the WAV-combining step.** The script that stitches multiple per-line WAV files into one combined audio file (built with Gemini's help) still isn't documented — likely tied to the facial-animation/audio sync gap Fahim's diagnosing. Distinct from `qwen.py` (Stage 3), which is now documented in `docs/QWENTTS.md`.
-- [ ] **Build runtime `.glb` loading in `App.ts`.** Decided: environment/object assets load individually at runtime (not pre-combined into `.babylon` via the Editor), referenced by path in `VRET SceneJSON` — see Stage 2. Not implemented yet.
-- [ ] **Does the base scene even need a `.babylon` file? (10/16 meeting)** Raised but not decided: load everything as `.glb` directly, skip BJSE/`.babylon` for the base scene too. Babylon.js stays the engine either way — confirm this still meets the project's scene requirements before changing anything. **Stronger case as of 2026-10-22:** there's no editable BJSE source project for the current scene anywhere — checked every branch of the legacy repo, the committed `bjse-project`/`BJSE_project`/`NewBJSE_project` folders are all stuck at a tiny ~23KB placeholder, nowhere near the actual ~5MB scene that got exported as `example.babylon`. Confirmed that exported file is a direct, near-byte-identical carryover from the legacy repo's `bennett` branch. Whoever built the real scene up in BJSE never committed the updated project file — only the final export. Editing the current scene in BJSE now means either asking Bennett directly if he still has the local project, or importing the lossy export into a fresh project (known issues: textures/post-processing don't always survive re-import). **Before relying on BJSE for any future scene work, an actual editable source project needs to exist and get committed** — not just the exported `.babylon`, which is effectively a dead end for further editing.
+- [x] **Build runtime `.glb` loading in `App.ts`.** Done (10/29) — environment/object assets load individually at runtime via a dedicated `environment.json` manifest, not `VRET SceneJSON` as originally planned here. See Stage 2.
+- [ ] **Does the base scene even need a `.babylon` file? (10/16 meeting)** Raised but not decided: load everything as `.glb` directly, skip BJSE/`.babylon` for the base scene too. Babylon.js stays the engine either way — confirm this still meets the project's scene requirements before changing anything. **Update (11/1): the BJSE-source-project question is resolved, but this one isn't.** The recovered source (see Stage 2) is a full Unreal project, not a BJSE project, and it's still only on the `origin/amanda` branch, not merged into the active build — so the base scene is still shipping as `example.babylon` for now. Whether to keep exporting through `.babylon` at all, vs. moving the base environment to the same per-asset `.glb` + `environment.json` path used for props, is still open.
 - [ ] **Materials/textures rendering cost across `.glb` assets (10/16 meeting).** Separate from the per-asset-loading tradeoff already noted in Stage 2 — specifically about how many distinct materials/textures the scene ends up with. Investigate optimization opportunities.
 - [ ] Clarify whether Unreal's export also needs to carry behavior-tree/Smart Object data (Kevin's Spring task), or whether that's a separate pipeline from the background/geometry export
 - [ ] **Pick an idle-animation source** — reuse the CMU `vrma/` library, Text to VRMA, or ARDY (research done — see Stage 7 above) — and wire `applyVRMA()` into `App.ts` for at least one character

@@ -10,7 +10,7 @@
 - Coordinate and document team progress, tasks, and collaboration
 - Own meeting notes and GitHub wiki/docs upkeep, and track open action items across subteams (absorbed from Carlos's floating role — he isn't currently carrying a standing assignment)
 - Ensure accurate compilation and loading of scenes in Babylon.js using existing builds and characters, noting/adjusting for performance gaps
-- Integrate idle animations for character models — evaluate Text to VRMA (outputs `.vrma` directly) vs. ARDY (NVIDIA research model; needs a `.npz`→BVH→VRMA conversion path via the official `bvh2vrma` tool, plus local GPU inference — lower priority, later work)
+- Integrate idle animations for character models — evaluate Text to VRMA (outputs `.vrma` directly) vs. ARDY (NVIDIA research model; needs a `.npz`→BVH→VRMA conversion path via the official `bvh2vrma` tool, plus local GPU inference — lower priority, later work). **Idle animation specifically is Fahim's call (10/30); the broader/"regular" VRMA body-animation track (CMU library testing, chained playback, rigging issues, the transition-snapping bug) is Carlos's, see `team/carlos/PLAN.md`.**
 - Standardize the explicit software build process and how data is compiled
 - Develop validation/testing for scene JSON files, character models, animations, and audio before they load into Babylon.js
 - Build the pre-session trigger-softening menu (siren volume, bystander-crowd aggression) for clinician use, per VRE-29 — reads the trigger-intensity fields Amanda/Coco are adding to `scene_XX.json`; Kevin proposed the idea and should weigh in on the design
@@ -38,14 +38,14 @@ Given the largest time budget on the team, this role functions as technical lead
 | [ ] 10/12 | Fix + baseline build | Fix or mitigate the sync issue — including checking the Python script that combines multiple WAV files into one (built with Gemini's help, per the 10/2 meeting) as a likely source; get a baseline Babylon.js scene loading reliably (existing characters/audio/animations); check whether the top-level `vrma/` folder has any existing `.vrma` content, and whether `bjse-plugin` is custom or vendored; verify the fix with the team via Discord check-in rather than self-certifying alone (Friday 10/9 sync was skipped, so no meeting notes to post this week either) |
 | [ ] 10/19 | Build standardization + facial animation revisions | Document the explicit build process; start the technical setup/build documentation draft; fix blinking stopping during speech and idle jaw/breathing not showing on one avatar; build diagnostic tooling for audio/mouth-shape sync (`check_av_sync.py`, `viseme-check.html`); evaluate whether the old repo's MetaHuman reference demo is a reliable sync baseline; confirm current voice clips' Audio2Face-3D generation settings; check whether Audio2Face-3D's hosted cloud endpoint is still viable and determine the facial-animation generation path (Audio2Face-3D vs. LAM Audio2Expression) going forward, including GPU access (local vs. Colab) |
 | [x] 10/26 | Validation tooling start + facial animation verification | Tune and audit the LAM regeneration pipeline (brow movement, blendshape gaps); add procedural head sway and eye gaze to cover what generation doesn't drive; flag Audio2Face-3D's new open-source status for a later evaluation |
-| [ ] 11/2 | Blendshape checks + validation tooling start | Run the carried-over VRM Add-on for Blender and miniface checks on the eye-blink asymmetry; start validation tooling for scene JSON/models/animations/audio; first-pass evaluation of self-hosted Audio2Face-3D now that it's open-source |
-| [ ] 11/9 | Softening menu + glb loading | Prototype the pre-session trigger-softening menu (siren volume, bystander-crowd aggression) reading the new scene_XX.json fields; start runtime `.glb` loading in `App.ts` for environment/object assets Kevin exports; design the `.glb` object placement schema (position/rotation/scale), coordinating with Amanda/Coco |
-| [ ] 11/16 | Idle animation integration + VRMA investigation | Prototype + integrate idle animations via Text to VRMA (or note a fallback if incompatible); as part of this, work through the VRMA investigation — test chained VRMA playback with the old TLTMedia VRET animation demo, investigate the transition snapping/teleporting issue (root-position changes in mocap animations, review the old repo for existing solutions); sync with Kevin on Unreal/Babylon compatibility issues found so far |
+| [ ] 11/2 | Blendshape checks | Run the carried-over VRM Add-on for Blender and miniface checks on the eye-blink asymmetry |
+| [ ] 11/9 | Idle animation integration (start) + glb loading | Prototype + integrate idle animations via Text to VRMA (or note a fallback if incompatible), using Carlos's body-animation research as input; continue runtime `.glb` loading in `App.ts` for environment/object assets Kevin exports; design the `.glb` object placement schema (position/rotation/scale) — technical format decision, not blocked on Amanda/Coco's scene content, loop them in for consistency with the broader scene_XX.json schema but don't wait on them — **done early, see `environment.json` v1 (10/29)** |
+| [ ] 11/16 | Idle animation polish | Sync with Carlos on his VRMA investigation (transition-snapping bug, rigging issues) and with Kevin on Unreal/Babylon compatibility issues found so far; polish idle animation integration |
 | [ ] 11/23 | Thanksgiving (reduced) | Light week — start team-wide GitHub cleanup (resolve stale branches, open PRs); documentation catch-up |
-| [ ] 11/30 | Finalize | Finalize the reliable Babylon.js build (the mock demo — scene + characters + audio + animations + idle); finalize validation tooling v1; publish setup/build/test/run documentation |
+| [ ] 11/30 | Finalize | Finalize the reliable Babylon.js build (the mock demo — scene + characters + audio + animations + idle); publish setup/build/test/run documentation |
 | [ ] 12/7 | Fall wrap-up | Compile the team's Fall progress into an end-of-semester report; retro; scope Spring priorities |
 
-**Fall exit criteria:** new repo structured/documented, reliable Babylon.js build (the mock demo) with facial animation/audio sync fixed, validation tooling v1, published local setup documentation.
+**Fall exit criteria:** new repo structured/documented, reliable Babylon.js build (the mock demo) with facial animation/audio sync fixed, published local setup documentation. *(Validation tooling v1 and the pre-session trigger-softening menu moved to Spring — both were blocked on Amanda/Coco/Kevin's scene-content and schema decisions landing in time for Fall; see Spring 2/1-2/8.)*
 
 ## Winter Gap (Dec 10 – Jan 24)
 
@@ -58,8 +58,8 @@ No scheduled work.
 | Done | Week of | Focus | Tasks |
 |---|---|---|---|
 | [ ] 1/25 | Resume | Confirm the build is still stable after the break; re-sync with all subteams on Spring priorities |
-| [ ] 2/1 | Support integration | Support Amanda/Coco's authoring-tool integration into the main pipeline |
-| [ ] 2/8 | Harden for testing + Kevin support | Harden the build for real testing use (crash resilience, session logging) — Jayden's pilot sessions begin around now; support Kevin's behavior tree/Smart Object integration |
+| [ ] 2/1 | Support integration + validation/softening menu start | Support Amanda/Coco's authoring-tool integration into the main pipeline; start validation tooling v1 for scene JSON/models/animations/audio, now that Amanda/Coco's schema is actually integrated (moved from Fall 11/30 — was blocked on their schema doc); start the pre-session trigger-softening menu (siren volume, bystander-crowd aggression), coordinating with Kevin on design (moved from Fall — was blocked on real scene content) |
+| [ ] 2/8 | Harden for testing + Kevin support | Harden the build for real testing use (crash resilience, session logging) — Jayden's pilot sessions begin around now; finalize validation tooling v1 and the softening menu, both needed before testing begins; support Kevin's behavior tree/Smart Object integration |
 | [ ] 2/15 | Continue hardening | Continue hardening; add session/data logging hooks if the psych team needs technical data capture during sessions |
 | [ ] 2/22 | Testing support | Support first test session batches technically (on-call for build issues — top priority this week); merge/integration coordination as time allows; non-critical independent/research work deferred |
 | [ ] 3/1 | Testing support | Continue technical support during testing; keep validation tooling current as scene variants grow (choice-based storylines, multiple scenarios) |
@@ -81,10 +81,11 @@ No scheduled work.
 - [ ] New repo structured and documented (folders, branches, prior-semester context carried over where useful)
 - [ ] Facial animation/audio sync gap diagnosed and fixed
 - [ ] Reliable Babylon.js build/demo loading scene + characters + audio + animations
-- [ ] Validation tooling v1 for scene JSON, models, animations, and audio
 - [ ] Local setup/build/test/run documentation published
 
 ### Spring 2027
+- [ ] Validation tooling v1 for scene JSON, models, animations, and audio (moved from Fall)
+- [ ] Pre-session trigger-softening menu for clinician use (moved from Fall)
 - [ ] Build hardened and stable through the full testing window
 - [ ] Full pipeline integration verified end-to-end (automation → Babylon.js/WebXR → Quest)
 - [ ] Continuity documentation published for the next VIP semester's team
