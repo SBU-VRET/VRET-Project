@@ -776,7 +776,26 @@ Takes ~30s for the 19s `altaforte` clip on CPU (model load included).
 | `--classes` | all | Comma list of classes to apply, e.g. `--classes bilabial,open` |
 | `--strength` | `1.0` | 0–1 blend toward the class targets; lower if it looks exaggerated |
 | `--ramp` | `0.08` | Ease in/out per window, seconds (keep ≥ 2 frames at 30fps or shapes pop) |
+| `--lead-scale` | `1.0` | Multiplier on each class's articulation lead (see below); `0` anchors on the sound itself |
 | `--dump-phones` | off | Print every recognized phoneme with its time, to sanity-check recognition |
+
+**Timing — why windows sit before the sound.** The mouth visibly reaches
+each shape before you hear it: the lips close before an "m", and the jaw drops
+before an "ah". Raw LAM gets this right; its mouth leads the audio by about 0.10s.
+The phoneme model, on the other hand, timestamps the sound itself (it matches
+audio loudness within about 0.02s). So each class shifts its windows earlier
+by a `lead`, measured from LAM's own output over about 200 phonemes in our 4
+clips:
+
+| Class | Lead |
+|---|---|
+| bilabial (M/B/P) | 0.15s |
+| labiodental (F/V) | 0.12s |
+| sibilant (S/Z), rounded (W/OO) | 0.10s |
+| postalveolar (SH/CH), open vowels, spread vowels | 0.09s |
+| rounded_open (OH/AW) | 0.06s |
+
+Without these leads, the corrected face trails the audio by about 0.13s.
 
 Point the clip's `animation` in `scene.json` at the `*_lam_corrected.json`
 file. Keeping the original `*_lam_converted.json` around makes A/B

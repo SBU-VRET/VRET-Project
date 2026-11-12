@@ -35,10 +35,15 @@ ROUND = ("mouthFunnel", "mouthPucker")
 # Each class: which IPA symbols it covers, how its window sits around the CTC
 # onset spike, and per-shape targets as (mode, value): "min" = raise to at least,
 # "max" = lower to at most. "span" windows run from the onset to the next phoneme.
+# "lead": visible articulation precedes the sound. Measured over ~200 phonemes in
+# our 4 clips, LAM's own mouth extreme comes this many seconds before the CTC
+# spike (which itself matches audio loudness within ~20ms); windows shift earlier
+# by it, or corrections land after the sound and the face reads as lagging.
 CLASSES = {
     "bilabial": {
         "match": lambda s: s[:1] in ("p", "b", "m"),
-        "window": ("fixed", 0.06, 0.03),
+        "lead": 0.15,
+        "window": ("fixed", 0.045, 0.045),
         "targets": {"mouthClose": ("min", 0.65), "jawOpen": ("max", 0.0),
                     **{n: ("max", 0.0) for n in LOWER_DOWN + UPPER_UP + ROUND}},
     },
@@ -46,40 +51,47 @@ CLASSES = {
         # No lip-tuck shape on these rigs (mouthRollLower is absent), so this is an
         # approximation: jaw near shut, lower lip up, upper lip lifted off it.
         "match": lambda s: s[:1] in ("f", "v"),
-        "window": ("fixed", 0.04, 0.05),
+        "lead": 0.12,
+        "window": ("fixed", 0.045, 0.045),
         "targets": {"jawOpen": ("max", 0.05), **{n: ("max", 0.0) for n in LOWER_DOWN + ROUND},
                     **{n: ("min", 0.3) for n in UPPER_UP}},
     },
     "sibilant": {
         "match": lambda s: s in ("s", "z"),
+        "lead": 0.10,
         "window": ("span", 0.02, 0.12),
         "targets": {"jawOpen": ("max", 0.04), **{n: ("max", 0.15) for n in LOWER_DOWN},
                     **{n: ("min", 0.2) for n in STRETCH}},
     },
     "postalveolar": {
         "match": lambda s: s in ("ʃ", "ʒ", "tʃ", "dʒ"),
+        "lead": 0.09,
         "window": ("span", 0.03, 0.14),
         "targets": {"jawOpen": ("max", 0.06), "mouthFunnel": ("min", 0.35),
                     **{n: ("max", 0.15) for n in LOWER_DOWN}},
     },
     "rounded": {
         "match": lambda s: s in ("w", "uː", "u", "ʊ"),
+        "lead": 0.10,
         "window": ("span", 0.04, 0.18),
         "targets": {"mouthPucker": ("min", 0.6), **{n: ("max", 0.0) for n in STRETCH + SMILE}},
     },
     "rounded_open": {
         "match": lambda s: s in ("oʊ", "ɔː", "ɔ", "o"),
+        "lead": 0.06,
         "window": ("span", 0.03, 0.2),
         "targets": {"mouthFunnel": ("min", 0.3), "mouthPucker": ("min", 0.3), "jawOpen": ("min", 0.2),
                     **{n: ("max", 0.0) for n in STRETCH + SMILE}},
     },
     "open": {
         "match": lambda s: s in ("ɑː", "ɑ", "a", "æ", "aɪ", "aʊ", "ʌ", "ɐ"),
+        "lead": 0.09,
         "window": ("span", 0.03, 0.2),
         "targets": {"jawOpen": ("min", 0.32)},
     },
     "spread": {
         "match": lambda s: s in ("iː", "i", "ɪ", "eɪ", "ɛ"),
+        "lead": 0.09,  # not measured separately; same as the other vowels
         "window": ("span", 0.03, 0.16),
         "targets": {**{n: ("min", 0.25) for n in STRETCH}, **{n: ("max", 0.1) for n in ROUND}},
     },
@@ -123,17 +135,19 @@ def envelope(times, windows, ramp):
     return env
 
 
-def class_windows(phones, cls):
+def class_windows(phones, cls, lead_scale=1.0):
     kind, a, b = cls["window"]
+    lead = cls["lead"] * lead_scale
     out = []
     for k, (t, s) in enumerate(phones):
         if not cls["match"](s):
             continue
         if kind == "fixed":
-            out.append((t - a, t + b))
+            s0, e0 = t - a, t + b
         else:
             nxt = phones[k + 1][0] if k + 1 < len(phones) else t + b
-            out.append((t, min(nxt - a, t + b)))
+            s0, e0 = t, min(nxt - a, t + b)
+        out.append((s0 - lead, e0 - lead))
     return out
 
 
@@ -146,6 +160,8 @@ def main():
     ap.add_argument("--classes", default=",".join(CLASSES), help="comma list, from: " + ",".join(CLASSES))
     ap.add_argument("--strength", type=float, default=1.0, help="0..1 blend toward the class targets")
     ap.add_argument("--ramp", type=float, default=0.08, help="raised-cosine ease in/out, seconds (>=2 frames at 30fps)")
+    ap.add_argument("--lead-scale", type=float, default=1.0,
+                    help="multiplier on each class's articulation lead (0 = anchor on the sound itself)")
     ap.add_argument("--model", default=MODEL_ID)
     ap.add_argument("--dump-phones", action="store_true")
     args = ap.parse_args()
@@ -166,7 +182,7 @@ def main():
     touched = np.zeros(len(times), dtype=bool)
     for cname in order:
         cls = CLASSES[cname]
-        wins = class_windows(phones, cls)
+        wins = class_windows(phones, cls, args.lead_scale)
         env = envelope(times, wins, args.ramp) * args.strength
         touched |= env > 0.01
         for shape, (mode, val) in cls["targets"].items():
