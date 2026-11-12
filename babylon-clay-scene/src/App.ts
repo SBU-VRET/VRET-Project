@@ -124,6 +124,16 @@ export class App {
 			this.engine?.resize();
 		});
 
+		// P: print the camera pose, to paste back in as the default start view.
+		window.addEventListener("keydown", (e) => {
+			if (e.key !== "p" && e.key !== "P") return;
+			const cam = this.scene?.activeCamera as any;
+			if (!cam) return;
+			const f = (v: Vector3) => `${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)}`;
+			const target = cam.getTarget ? cam.getTarget() : cam.position.add(cam.getDirection(Vector3.Forward()));
+			console.log(`[camera] position (${f(cam.position)})  target (${f(target)})`);
+		});
+
 		// Start render loop
 		this.engine.runRenderLoop(() => {
 			//console.log(this.scene?.activeCamera?.position);
@@ -212,6 +222,7 @@ export class App {
 				if (leftArm)  leftArm.rotationQuaternion  = Quaternion.RotationAxis(new Vector3(1, 0, 0), -armDown);
 				if (rightArm) rightArm.rotationQuaternion = Quaternion.RotationAxis(new Vector3(1, 0, 0), -armDown);
 			}
+			this._frameCameraOnFace(avatar);
 			console.log('[App] Avatars configured');
 		} catch (e) {
 			console.error('[App] Avatar setup failed:', e);
@@ -303,6 +314,41 @@ export class App {
 
 		// Build clip playback UI
 		this._createAvatarUI(avatar, secondCharacter);
+	}
+
+	/** Start the desktop camera face-on to an avatar, at roughly conversation distance. */
+	private _frameCameraOnFace(target: any) {
+		const camera = this.scene?.activeCamera as any;
+		const { headBone, leftEyeBone, rightEyeBone } = target ?? {};
+		if (!camera || !headBone || !leftEyeBone || !rightEyeBone) {
+			console.warn('[App] Face framing skipped: missing camera or head/eye bones');
+			return;
+		}
+
+		// World matrices are stale until the next render; refresh the chain top-down.
+		const refresh = (node: any) => {
+			const chain: any[] = [];
+			for (let n = node; n; n = n.parent) chain.unshift(n);
+			chain.forEach((n) => n.computeWorldMatrix(true));
+		};
+		[headBone, leftEyeBone, rightEyeBone].forEach(refresh);
+
+		const head = headBone.getAbsolutePosition().clone();
+		const left = leftEyeBone.getAbsolutePosition().clone();
+		const right = rightEyeBone.getAbsolutePosition().clone();
+		const eyes = left.add(right).scale(0.5);
+
+		// Eyes sit in front of the head pivot, so this is "forward" whatever the
+		// model's handedness or yaw. Distance scales off eye spacing (~6.3cm IRL).
+		const forward = eyes.subtract(head);
+		forward.y = 0;
+		if (forward.lengthSquared() < 1e-8) return;
+		forward.normalize();
+		const distance = Vector3.Distance(left, right) * 10;
+
+		camera.position = eyes.add(forward.scale(distance));
+		camera.setTarget(eyes);
+		if (camera.minZ > distance * 0.1) camera.minZ = distance * 0.1;
 	}
 
 	/**

@@ -32,6 +32,10 @@ function buildMorphMap(mesh) {
   const map = new Map();
   const mgr = mesh?.morphTargetManager;
   if (!mgr) return map;
+  // Default true drops zero-influence targets, so the active count (a shader
+  // define) changes whenever a weight crosses 0 and each new count recompiles
+  // the shader — a 1-2s render stall at clip start while audio keeps playing.
+  mgr.optimizeInfluencers = false;
   for (let i = 0; i < mgr.numTargets; i++) {
     const t = mgr.getTarget(i);
     map.set(t.name, t);
