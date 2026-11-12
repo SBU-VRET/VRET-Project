@@ -453,6 +453,27 @@ export class App {
 			secondCharacter.stopAndReset();
 		}));
 
+		// Live A/V sync nudge: [ = face earlier, ] = face later, \ = reset.
+		const avatars = [avatar, secondCharacter].filter(Boolean);
+		const syncLabel = document.createElement('div');
+		syncLabel.style.cssText = 'padding:6px 10px;background:rgba(0,0,0,0.65);color:#fff;border-radius:6px;font:13px monospace;';
+		const renderSync = () => {
+			const ms = Math.round((avatars[0]?.syncOffset ?? 0) * 1000);
+			const dir = ms > 0 ? 'face later' : ms < 0 ? 'face earlier' : 'no offset';
+			syncLabel.textContent = `Sync ${ms >= 0 ? '+' : ''}${ms} ms (${dir})  [ ] \\`;
+		};
+		window.addEventListener('keydown', (e) => {
+			const step = e.key === ']' ? 0.02 : e.key === '[' ? -0.02 : null;
+			if (step === null && e.key !== '\\') return;
+			for (const a of avatars) {
+				a.syncOffset = step === null ? 0 : Math.round((a.syncOffset + step) * 1000) / 1000;
+			}
+			renderSync();
+			console.log(`[sync] syncOffset = ${avatars[0].syncOffset}`);
+		});
+		renderSync();
+		container.appendChild(syncLabel);
+
 		document.body.appendChild(container);
 	}
 

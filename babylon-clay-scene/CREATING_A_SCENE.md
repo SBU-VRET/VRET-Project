@@ -91,12 +91,20 @@ A manifest is a JSON file like `public/scene.json`:
 ```json
 {
   "avatar": "models/Black/Black_F_1_Busi.vrm",
+  "syncOffset": -0.06,
   "idle": {
     "blinkIntervalMin": 2.0,
     "blinkIntervalMax": 5.0,
     "blinkDuration": 0.15,
     "breathCycleSpeed": 0.4,
-    "breathJawAmount": 0.1
+    "breathJawAmount": 0.1,
+    "gazeAmplitudeH": 0.12,
+    "gazeAmplitudeV": 0.06,
+    "gazeEaseDuration": 0.35,
+    "gazeHoldDuration": 1.2,
+    "gazeIntervalMin": 1.5,
+    "gazeIntervalMax": 4.0,
+    "headSwayIntensity": 1.0
   },
   "clips": [
     {
@@ -110,10 +118,15 @@ A manifest is a JSON file like `public/scene.json`:
 ```
 
 - `avatar` — path to the `.vrm` from step 1.
+- `syncOffset` — seconds to shift the face relative to the audio (negative =
+  earlier). **Production parameter:** copy the value the other manifests use
+  so every character stays in sync, and re-tune it on the Quest (press `]`/`[`
+  while a clip plays). See `docs/TECH_PIPELINE.md` Stage 6, "Production
+  parameters".
 - `idle` — optional; omit fields to use the defaults shown above.
   Head sway and eye-gaze saccades also run automatically during idle (and
-  during speech) but aren't configurable here yet — they're hardcoded in
-  `A2FAvatar.js`.
+  during speech), and can be tuned with the extra `idle` fields listed in
+  `ANIMATION_PIPELINE.md` §2.
 - `clips` — one entry per line, played in order. `animation`/`audio` paths
   are relative to `public/`. Set `delayAfter: 0` on the last clip.
 

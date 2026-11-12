@@ -1,5 +1,6 @@
 {
     "avatar": "models/Black/Black_F_1_Busi.vrm",
+    "syncOffset": -0.06,
     "idle": {
         "blinkIntervalMin": 2.0,
         "blinkIntervalMax": 5.0,

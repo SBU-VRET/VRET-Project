@@ -79,7 +79,7 @@ No scheduled work.
 
 ### Fall 2026
 - [ ] New repo structured and documented (folders, branches, prior-semester context carried over where useful)
-- [ ] Facial animation/audio sync gap diagnosed and fixed
+- [x] Facial animation/audio sync gap diagnosed and fixed (11/12; re-check on Quest)
 - [ ] Reliable Babylon.js build/demo loading scene + characters + audio + animations
 - [ ] Local setup/build/test/run documentation published
 

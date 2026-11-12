@@ -160,7 +160,7 @@ flowchart LR
 - Output: one `.wav` per line.
 - Local, open-weights, free — needs a GPU for reasonable speed (`qwen.py` currently runs on CPU instead). Alibaba also hosts it as a paid cloud API, unused here.
 - Full mechanics, file breakdown, open questions: `docs/QWENTTS.md`.
-- A separate, undocumented WAV-combining script (tied to the facial-animation/audio sync investigation) stitches per-line clips together downstream — see Open Questions.
+- A separate, undocumented WAV-combining script stitches per-line clips together downstream — see Open Questions.
 
 ## 4. Facial animation — choose ONE option per clip
 
@@ -260,6 +260,15 @@ flowchart LR
 - `A2FAvatar` is the pipeline's actual end consumer, not another conversion step. Inputs: VRM model, scene manifest, per-clip animation JSON, clip audio WAV. Output: a live, synced avatar — morph-target weights applied every render frame, timed to `audio.currentTime` so lip-sync holds even if a frame renders late.
 - WebXR ships that to the Meta Quest 3/3s, the confirmed deployment target.
 - BJSE vs. Babylon Engine: see Stage 2.
+
+### Production parameters — tune on the target device before release
+
+Settings whose right value depends on the device the scene runs on, not on the content. Values tuned on a dev laptop are a starting point only; set them again on the Quest before any user-facing session.
+
+| Parameter | Where | Current value | What it does / how to tune |
+|---|---|---|---|
+| `syncOffset` | top level of each scene manifest (`scene.json`, `scene2.json`) | `-0.06` (face 60ms earlier). Tuned by eye on the dev laptop, 11/12 | Shifts the face relative to the audio to cover display and audio-output delay. Tune live: play a clip, press `]`/`[` to nudge ±20ms and `\` to reset, then copy the on-screen value into every manifest. Laptop needed the face *earlier* (likely rendering/display delay); Bluetooth audio would push it the other way (~+150–250ms). **Re-tune on the Quest.** Details: `ANIMATION_PIPELINE.md` §2. |
+| Morph-target performance (option B, live; C pending) | `A2FAvatar.js` (`MIN_INFLUENCE`, priming in `loadManifest()`) | 37 active face targets (down from 113 under option A; much faster on the dev laptop) | Check Quest frame rate with both avatars talking; if it's short of the headset's refresh rate, do option C (strip unused targets from the VRMs). See Open questions below. |
 - GitHub (SBU-VRET/VRET-Project) is the storage/versioning layer underneath every stage above.
 
 ## 7. Idle/body animation (VRMA) — choose ONE option
@@ -291,7 +300,7 @@ flowchart LR
 - **Option C — [ARDY](https://github.com/nv-tlabs/ardy)** (NVIDIA + ETH Zürich). Generates new motion from a text prompt, outputs `.npz`. Needs a `npz_to_bvh.py` script (not written) to reach `.bvh`, then **[bvh2vrma](https://github.com/vrm-c/bvh2vrma)** (official VRM-C tool) to reach `.vrma`. Needs local GPU inference (RTX 4090 recommended).
 
 ## Open questions / TODO
-- [ ] **Document the WAV-combining step.** The script that stitches multiple per-line WAV files into one combined audio file (built with Gemini's help) still isn't documented — likely tied to the facial-animation/audio sync gap Fahim's diagnosing. Distinct from `qwen.py` (Stage 3), which is now documented in `docs/QWENTTS.md`.
+- [ ] **Document the WAV-combining step.** The script that stitches multiple per-line WAV files into one combined audio file (built with Gemini's help) still isn't documented. (It was suspected in the facial-animation/audio sync gap, but that was resolved 11/12 without it.) Distinct from `qwen.py` (Stage 3), which is now documented in `docs/QWENTTS.md`.
 - [ ] **Does the base scene even need a `.babylon` file? (10/16 meeting)** Raised but not decided: load everything as `.glb` directly, skip BJSE/`.babylon` for the base scene too. Babylon.js stays the engine either way — confirm this still meets the project's scene requirements before changing anything. **Update (11/1): the BJSE-source-project question is resolved, but this one isn't.** The recovered source (see Stage 2) is a full Unreal project, not a BJSE project, and it's still only on the `origin/amanda` branch, not merged into the active build — so the base scene is still shipping as `example.babylon` for now. Whether to keep exporting through `.babylon` at all, vs. moving the base environment to the same per-asset `.glb` + `environment.json` path used for props, is still open.
 - [ ] **Materials/textures rendering cost across `.glb` assets (10/16 meeting).** Separate from the per-asset-loading tradeoff already noted in Stage 2 — specifically about how many distinct materials/textures the scene ends up with. Investigate optimization opportunities.
 - [ ] Clarify whether Unreal's export also needs to carry behavior-tree/Smart Object data (Kevin's Spring task), or whether that's a separate pipeline from the background/geometry export
@@ -299,4 +308,9 @@ flowchart LR
 - [ ] Check whether the team has access to an RTX 4090 (or equivalent) if ARDY is the chosen path — it's a local-inference research model, not a lightweight tool
 - [ ] `qwen.py` (Stage 3) needs a maintainer and a real home in the tracked repo — currently sitting untracked in `temp/qwenTTS/`. See `docs/QWENTTS.md` for the rest of its open questions (CPU vs. GPU, matching it to the WAV-combining script above).
 - [ ] **When does player interactivity start, relative to the opening cutscene? (11/6 meeting)** Kevin proposed an opening cutscene — the car driving, then getting pulled over by the police car — to build context before the exposure scene proper, per Professor Ete's request that the player not just be dropped in without framing (treated as a high priority). Not decided: whether the player has any interactive control (e.g. driving) during the lead-in, or whether it's all non-interactive until the pull-over moment. Needs input from Kevin (VR interaction), Jayden (scene/script design), and Fahim (runtime/camera implementation).
+- [ ] **How to keep facial morph targets from stalling the renderer — performance vs. effort (11/12).** By default Babylon skips morph targets at zero influence. The number of active targets is part of the face shader, so it recompiles whenever that number changes; at clip start that stalled rendering 1–2s while the audio kept playing (the likely cause of the long-open mouth/voice mismatch). Each avatar's face mesh has 113 morph targets, but only **37** are ever driven: LAM's 52 ARKit shapes minus the 15 these meshes lack. The other 76 are unused legacy shapes (old phoneme set, 11-letter visemes, duplicates of ARKit shapes under older names). All three options below fix the stall; they differ in GPU cost and effort:
+  - **Option A — all targets always active (`optimizeInfluencers = false`). Shipped first, replaced by B on 11/12.** One line in `buildMorphMap()`. The GPU blends all 113 targets every frame, ~3× the work of the 37 actually used; noticeably slower on a laptop and the main concern on Quest.
+  - **Option B — keep Babylon's optimisation on, but never write an exact 0 to a driven shape. Implemented 11/12.** `_applyShape()` clamps every write to at least `MIN_INFLUENCE` (`1e-4`, ~5 microns of movement), and `loadManifest()` primes every shape any clip drives (plus `jawOpen` and the blinks for idle) right after loading, so the full set is active from the start. The shader compiles once with the 37 driven shapes, so it does about a third of Option A's per-frame work. Small code change. Catch: anything new that writes an exact 0 to a shape brings back the stalls, so the clamp has to stay in the one place all shape writes go through.
+  - **Option C — strip the 76 unused targets from the VRM files** (Blender or `gltf-transform`), plus Option A or B. Lowest GPU cost and smaller files, but it's asset work per avatar, and it removes the legacy shapes for good (fine, since the Rhubarb test already concluded we don't use them).
+  - **B is now live, and confirmed on the dev laptop (11/12): noticeably faster than A**, back to running smoothly, with the start-of-clip stall still gone. Still open: whether C is needed. Decide after measuring Quest frame rate, or if VRM download size becomes a problem.
 - [ ] **Lean the threat NPC's expressions negative? (11/6 meeting)** Jayden's research found people dwell more on angry/upset/annoyed faces than neutral or positive ones — raised as a possible direction for the officer/threat character's facial animation. Not yet decided or scoped against the current LAM-generated expression pipeline.

@@ -19,6 +19,13 @@ const TEETH_MAP = {
   mouthClose:  'h_teeth.t_MPB_h',
 };
 
+// Babylon skips zero-influence morph targets, and the active count is a shader
+// define — every change recompiles the shader (a 1-2s stall at clip start while
+// audio plays on). Driven shapes never drop to exactly 0, and loadManifest primes
+// them all up front, so the count is fixed and the shader compiles once. Unused
+// legacy targets stay at 0 and cost nothing. Visually nil (~5 microns).
+const MIN_INFLUENCE = 1e-4;
+
 // ─── State machine ───────────────────────────────────────────────────────────
 const State = Object.freeze({
   UNLOADED:     'unloaded',
@@ -32,10 +39,6 @@ function buildMorphMap(mesh) {
   const map = new Map();
   const mgr = mesh?.morphTargetManager;
   if (!mgr) return map;
-  // Default true drops zero-influence targets, so the active count (a shader
-  // define) changes whenever a weight crosses 0 and each new count recompiles
-  // the shader — a 1-2s render stall at clip start while audio keeps playing.
-  mgr.optimizeInfluencers = false;
   for (let i = 0; i < mgr.numTargets; i++) {
     const t = mgr.getTarget(i);
     map.set(t.name, t);
@@ -159,6 +162,9 @@ export class A2FAvatar {
     if (!resp.ok) throw new Error(`Failed to load manifest: HTTP ${resp.status}`);
     this.manifest = await resp.json();
 
+    // Seconds the face is held back relative to the audio (negative = earlier).
+    this.syncOffset = this.manifest.syncOffset ?? 0;
+
     if (this.manifest.idle) {
       Object.assign(this.idleConfig, this.manifest.idle);
     }
@@ -185,6 +191,12 @@ export class A2FAvatar {
       const audioSrc = (entry.audio && entry.audio !== 'N/A') ? entry.audio : null;
       this.clips.push({ animData, audioSrc, id: entry.id, delayAfter: entry.delayAfter ?? 1.0 });
     }
+
+    const driven = new Set(['jawOpen', 'eyeBlinkLeft', 'eyeBlinkRight']);
+    for (const clip of this.clips) {
+      for (const name of clip.animData?.blendShapeNames ?? []) driven.add(name);
+    }
+    for (const name of driven) this._applyShape(name, 0);
 
     this._setState(State.IDLE);
     return this;
@@ -321,6 +333,7 @@ export class A2FAvatar {
   // ═══════════════════════════════════════════════════════════════════════════
 
   _applyShape(name, value) {
+    value = Math.max(value, MIN_INFLUENCE);
     const ft = this.faceMap.get(name);
     if (ft) ft.influence = value;
 
@@ -658,20 +671,20 @@ export class A2FAvatar {
 
     const animData = clip.animData;
 
-    if (this.audio) {
-      //console.log(`AUDIO TIMESTAMP ${this.audio.currentTime}`);
-      this.playbackTime = this.audio.currentTime;
+    // Once the audio has ended, keep advancing on dt so a positive syncOffset
+    // still plays out the face's last frames.
+    if (this.audio && !this.audio.ended) {
+      this.playbackTime = this.audio.currentTime - this.syncOffset;
     } else {
       this.playbackTime += dt;
     }
 
     const duration = animData.frameCount / animData.fps;
-    const frameIdx = Math.floor(this.playbackTime * animData.fps);
-    const pastLastFrame = frameIdx >= animData.frames.length;
-    const audioEnded = this.audio ? this.audio.ended : false;
+    const frameIdx = Math.max(0, Math.floor(this.playbackTime * animData.fps));
+    const faceDone = this.playbackTime >= duration || frameIdx >= animData.frames.length;
+    const audioDone = !this.audio || this.audio.ended;
 
-    //console.log(`OUT OF DURATION TOTAL ${duration}`);
-    if (this.playbackTime >= duration || audioEnded || pastLastFrame) {
+    if (faceDone && audioDone) {
       if (this.audio) { this.audio.pause(); this.audio = null; }
       if (this.onClipEnd) this.onClipEnd(this.currentClipIdx, clip.id);
       this._startTransition();

@@ -58,17 +58,29 @@ following:
 
 ## 2. Scene manifest schema (`scene.json`)
 
-A scene file is a single JSON object with three top-level fields.
+A scene file is a single JSON object with four top-level fields. **Template:**
+copy this as the starting point for a new character. It lists every setting.
+`syncOffset` is the current production value (see below); `breathJawAmount` is
+the 0.1 both current scenes use; every other `idle` value is the default from
+`A2FAvatar.js`, so deleting a field leaves behaviour unchanged.
 
 ```json
 {
   "avatar": "models/Black/Black_F_1_Busi.vrm",
+  "syncOffset": -0.06,
   "idle": {
     "blinkIntervalMin": 2.0,
     "blinkIntervalMax": 5.0,
     "blinkDuration": 0.15,
     "breathCycleSpeed": 0.4,
-    "breathJawAmount": 0.05
+    "breathJawAmount": 0.1,
+    "gazeAmplitudeH": 0.12,
+    "gazeAmplitudeV": 0.06,
+    "gazeEaseDuration": 0.35,
+    "gazeHoldDuration": 1.2,
+    "gazeIntervalMin": 1.5,
+    "gazeIntervalMax": 4.0,
+    "headSwayIntensity": 1.0
   },
   "clips": [
     {
@@ -85,6 +97,21 @@ A scene file is a single JSON object with three top-level fields.
 URL of the `.vrm` file to load. Fetched via Babylon's GLTF loader with
 `pluginExtension: ".glb"`. Path is resolved relative to the served page, the
 same as the manifest itself.
+
+### `syncOffset` (number, optional, default `0`; production value `-0.06`)
+Seconds to hold the face back relative to the audio; negative makes the face
+run earlier. Applies to every clip in the manifest. **Production parameter:**
+keep it the same in every manifest, and re-tune on the target device (see
+`docs/TECH_PIPELINE.md` Stage 6, "Production parameters"). Use it to compensate for
+speaker/headphone output delay (roughly 20–50ms on laptop speakers, 150–250ms
+on Bluetooth) or for LAM's built-in ~0.10s articulation lead.
+
+**Finding a value by eye:** while a clip plays, press `]` to shift the face 20ms
+later, `[` for 20ms earlier, and `\` to reset. The current offset shows under the
+clip buttons (top right) and is logged to the console as `[sync] syncOffset = …`.
+The keys change both avatars together and aren't saved, so copy the value you
+settle on into `scene.json`/`scene2.json` as `"syncOffset": 0.06` (for example).
+If no value ever looks right, the mismatch is the mouth shapes, not timing.
 
 ### `idle` (object, optional)
 Idle-state behaviour — covers blinking, breathing/mouth movement, head
@@ -146,9 +173,9 @@ character's own `scene.json`/`scene2.json`, rather than editing
 `A2FAvatar.js`. A good first experiment: cut `gazeAmplitudeH`/
 `gazeAmplitudeV` toward 0 to confirm you're looking at gaze and not some
 other motion, then bring them back up to taste. There's no automated
-tuning for this (it's a handful of numbers, not worth scripting) — the
-"template" is the `idle` block itself, copyable between scene files and
-overridable per character.
+tuning for this (it's a handful of numbers, not worth scripting). The
+template at the top of this section lists every field, so copy it into a new
+scene file and override per character.
 
 
 ### `clips` (array, required)
