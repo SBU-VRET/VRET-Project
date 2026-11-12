@@ -169,19 +169,29 @@ flowchart LR
 ```mermaid
 flowchart LR
     subgraph S4["🟦 Fahim"]
-    WAV --> LAMColabCLI["<b>VRET lam_audio2expression_colab.py</b><br/>PREFERRED (no local GPU needed)<br/>via google-colab-cli (WSL)"] --> GoogleColab["🌐 <b>Google Colab</b><br/>free NVIDIA T4 GPU"] --> LAMColabTool["<b>LAM Audio2Expression</b>"] -->|"JSON<br/>eyeBlink_L"| ParseA2E["<b>parse_a2e.py</b><br/>(real CLI)"]
+    WAV --> RunColabSH["<b>run_colab.sh</b><br/>PREFERRED (no local GPU needed)<br/>wrapper, run in WSL"]
+    subgraph ColabVM["🌐 Google Colab -- free NVIDIA T4 GPU"]
+    LAMColabCLI["<b>VRET lam_audio2expression_colab.py</b><br/>via google-colab-cli"] --> LAMColabTool["<b>LAM Audio2Expression</b>"]
+    end
+    RunColabSH --> LAMColabCLI
+    LAMColabTool -->|"JSON<br/>eyeBlink_L"| ParseA2E["<b>parse_a2e.py</b><br/>(real CLI)"]
     WAV --> LAMLocal["💻 <b>PREFERRED</b><br/>LAM Audio2Expression<br/>local (needs NVIDIA GPU)"] -->|"JSON<br/>eyeBlink_L"| ParseA2E
     WAV -.-> A2FDirect["⚠️ DEPRECATED 🌐<br/><b>a2f_extractor.py</b><br/>NVCF cloud endpoint shut down"] -.-> RuntimeJSON["<b>VRET AnimationJSON</b><br/>animations/*_frames.json"]
     WAV -.-> A2F["⚠️ NOT PREFERRED 💻<br/><b>NVIDIA Audio2Face-3D</b><br/>manual export, self-host only now"] -.->|"CSV<br/>EyeBlinkLeft"| CSVConv["<b>csv_converter.py</b><br/>(real CLI)"]
     ParseA2E --> RuntimeJSON
+    ParseA2E -->|"optional"| MouthCorr["<b>mouth_correction.py</b><br/>local CPU, no GPU<br/>wav2vec2 phoneme model"]
+    WAV -.->|"same .wav"| MouthCorr
+    MouthCorr --> CorrectedJSON["<b>VRET AnimationJSON (corrected)</b><br/>animations/*_lam_corrected.json"]
     CSVConv -.-> RuntimeJSON
     end
 
     style S4 stroke:#2E86DE,stroke-width:2px
+    style ColabVM stroke:#F39C12,stroke-width:2px,stroke-dasharray: 3 2
     classDef tool fill:#6c9bd1,stroke:#2c4a6b,stroke-width:2px,color:#fff;
     classDef deprecated fill:#95a5a6,stroke:#c0392b,stroke-width:2px,color:#fff,stroke-dasharray: 4 3;
     classDef artifact fill:#fbe7a1,stroke:#a87f1a,stroke-width:1px,color:#000;
-    class LAMColabCLI,GoogleColab,LAMColabTool,LAMLocal,ParseA2E tool
+    class RunColabSH,LAMColabCLI,LAMColabTool,LAMLocal,ParseA2E,MouthCorr tool
+    class CorrectedJSON artifact
     class A2F,A2FDirect,CSVConv deprecated
     class WAV,RuntimeJSON artifact
 ```
@@ -189,6 +199,7 @@ flowchart LR
 - **LAM Audio2Expression is the preferred path (decided 2026-10-22).** NVIDIA Audio2Face-3D's hosted cloud endpoint — its one real advantage, avoiding local GPU use — is deprecated, so both tools now equally require a GPU; LAM is free either way, Audio2Face-3D self-hosted likely isn't. See `docs/AUDIO2FACE_VS_AUDIO2EXPRESSION.md` for the full comparison.
 - **Build process changed (11/10): Colab is now driven headlessly via the CLI, not a notebook you click through by hand — confirmed working end-to-end.** `lam_audio2expression_colab.py` (`babylon-clay-scene/animations/`, mirrored in `team/fahim/audio2expression/`) runs LAM on a free Google Colab NVIDIA T4 GPU for machines without one locally — same steps as before (own Python 3.10 venv, deps via pip, weight download, inference), invoked via Google's official `google-colab-cli` (`colab new` → `colab upload` → `colab exec -f` → `colab download` → `colab stop`), run from WSL2 since the CLI is Linux/macOS only. `team/fahim/audio2expression/run_colab.sh` wraps that whole sequence into one command that only needs the audio file(s) (or a folder of them) as input — it stops the GPU session after every run by default to protect free-tier compute-unit quota, pass `--keep` if about to run another batch right away. Setup is scripted too: `setup_windows.ps1` (enables WSL2, installs Ubuntu) and `setup_wsl.sh` (installs the venv, CLI, and `keyrings.alt` — required, or the OAuth token won't persist); the actual Google login still has to be done by hand once. The original `LAM_Audio2Expression_Colab.ipynb` still exists as a manual fallback/reference. Full step-by-step in `ANIMATION_PIPELINE.md` §6. First real run (`altaforte.wav`) produced output matching known-good ranges from prior manual LAM runs.
 - `parse_a2e.py` (LAM path): now has a real CLI (`-o`, `--quiet`), not hardcoded filenames.
+- **New optional post-process step (11/12): `mouth_correction.py`.** It runs locally on CPU, so no Colab or GPU is needed. It takes the converted LAM JSON plus the same `.wav`, recognizes phonemes from the audio itself with a wav2vec2 phoneme model (no transcript), and sharpens shapes LAM under-articulates: M/B/P lip closure, jaw drop on open vowels, rounding on W/OO, and lower lip held up on F/V/S/SH. Output is a separate `*_lam_corrected.json`, so the uncorrected file stays for A/B. Tested on `altaforte` only so far. TH/L/T/D/N/K/G aren't corrected because the avatars have no tongue mesh. Setup and flags: `ANIMATION_PIPELINE.md` §6b; per-class table: `docs/FACIAL_ANIM_REGEN_NOTES.md`.
 - **Audio2Face-3D is explicitly not preferred going forward** — `a2f_extractor.py` (direct gRPC) is fully deprecated since its NVCF cloud endpoint is shut down; manual CSV export + `csv_converter.py` still technically works but requires self-hosting Audio2Face-3D, which needs the same GPU LAM needs anyway, for a tool that's likely not free. Kept in the repo and documented only in case self-hosted Audio2Face-3D becomes worth revisiting later.
 - All 4 of this demo's current clips went through Audio2Face → CSV (manual export, predates `a2f_extractor.py`, confirmed via git history — see `docs/FACIAL_ANIM_REGEN_NOTES.md`), with every Audio2Face parameter on them unknown/untuned. LAM was only spot-tested on one clip before this decision.
 

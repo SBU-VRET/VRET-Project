@@ -8,6 +8,10 @@ in the Babylon.js scene. Covers:
    - `animations/parse_a2e.py` — converts **LAM Audio2Expression (A2E)** JSON
      output into runtime JSON. **Current preferred path** (2026-10-22) — see
      Section 6.
+   - `animations/mouth_correction.py` — optional post-process on the
+     converted LAM JSON: recognizes phonemes from the `.wav` and sharpens
+     mouth shapes LAM under-articulates (M/B/P closure, open vowels,
+     rounding, etc.). See Section 6b.
    - `animations/a2f_extractor.py` — calls **NVIDIA Audio2Face-3D** directly over
      its gRPC API and writes runtime-ready JSON in one step (no manual export).
      Its hosted cloud endpoint is now deprecated — see Section 4.
@@ -83,9 +87,14 @@ URL of the `.vrm` file to load. Fetched via Babylon's GLTF loader with
 same as the manifest itself.
 
 ### `idle` (object, optional)
-Idle-state behaviour. All fields are optional; each key shown overrides
-the matching default from `A2FAvatar` constructor defaults
-([A2FAvatar.js:96-97](A2FAvatar.js)).
+Idle-state behaviour — covers blinking, breathing/mouth movement, head
+sway, and eye gaze. All fields are optional; each key shown overrides the
+matching default from `A2FAvatar` constructor defaults
+([A2FAvatar.js:96-104](A2FAvatar.js)). **As of 11/12, head sway and eye
+gaze are configurable here too** — previously their amplitude/timing was
+hardcoded in `A2FAvatar.js` with no way to tune per character; now they
+go through the same `Object.assign(idleConfig, manifest.idle)` merge
+blink/breath already used.
 
 | Field              | Type   | Default | Meaning                                                  |
 | ------------------ | ------ | ------- | -------------------------------------------------------- |
@@ -93,22 +102,54 @@ the matching default from `A2FAvatar` constructor defaults
 | `blinkIntervalMax` | number | 5.0     | Max seconds between blinks                               |
 | `blinkDuration`    | number | 0.15    | Length of one blink (seconds, triangle in→out)           |
 | `breathCycleSpeed` | number | 0.4     | Breathing frequency multiplier                           |
-| `breathJawAmount`  | number | 0.012   | How far the jaw opens at peak inhale (morph weight 0–1)  |
+| `breathJawAmount`  | number | 0.012   | How far the jaw opens at peak inhale (morph weight 0-1) — idle-only mouth movement; actual speech mouth movement comes from the clip's animation JSON, not this config |
+| `gazeAmplitudeH`   | number | 0.12    | Max horizontal eye-glance angle (radians, +/-) |
+| `gazeAmplitudeV`   | number | 0.06    | Max vertical eye-glance angle (radians, +/-) |
+| `gazeEaseDuration` | number | 0.35    | Seconds to ease into/out of a glance |
+| `gazeHoldDuration` | number | 1.2     | Seconds a glance holds once reached |
+| `gazeIntervalMin`  | number | 1.5     | Min seconds between glances (from the end of the previous one) |
+| `gazeIntervalMax`  | number | 4.0     | Max seconds between glances |
+| `headSwayIntensity`| number | 1.0     | Multiplier on all three head-sway axes (pitch/yaw/roll) — 0 disables sway, 2.0 doubles it |
 
-### Head sway and eye gaze (not in `scene.json`)
-Two more idle behaviors run alongside blink/breathing — `_tickHeadSway()`
-and `_tickGaze()` in `A2FAvatar.js`. Neither is driven by generated
-animation data (LAM's ARKit-52 output has no head pose at all, and this
-avatar rig has no gaze blendshapes), so both are driven procedurally in
-code instead, the same way blink is. Unlike the `idle` fields above,
-their amplitude/timing constants are hardcoded in `A2FAvatar.js`, not
-exposed through `scene.json` — there was no need yet to vary them
-per-avatar. Head sway rotates the head bone with small mismatched sine
-waves; eye gaze picks random small glances and rotates the `LeftEye`/
-`RightEye` bones to match, doing the rest-pose/offset math in 4x4
-matrices (not quaternions) since the avatar's mirrored export scale
-corrupts quaternion math partway through — see the gitignored
-`docs/FACIAL_ANIM_REGEN_NOTES.md` for the full debugging history.
+### Mouth movement, head sway, and eye gaze — what drives each
+Three separate things move the face/head at idle, easy to conflate:
+
+- **Speech mouth movement** comes from the clip's animation JSON
+  (LAM/Audio2Face output, converted by `parse_a2e.py`/`csv_converter.py`)
+  — not an `idle` setting at all. This is what needs regenerating if
+  dialogue mouth shapes look wrong; see Section 6.
+- **Idle mouth movement** (`breathJawAmount`/`breathCycleSpeed`) is a
+  small sine-wave jaw-open simulating breathing, only active in `IDLE`
+  state — real speech jaw movement always wins during `PLAYING`.
+- **Head sway** (`_tickHeadSway()`) rotates the head bone with two small
+  mismatched sine waves per axis, so it doesn't read as a metronome. Runs
+  unconditionally (idle and speaking both), scaled by `headSwayIntensity`.
+  Not driven by any generated data — LAM's ARKit-52 output has no head
+  pose at all — so it's purely procedural.
+- **Eye gaze** (`_tickGaze()`) picks a random small glance target at a
+  random interval, eases into it, holds, eases back to neutral, repeats.
+  Also purely procedural — this avatar rig has no gaze blendshapes, so it
+  rotates the real `LeftEye`/`RightEye` bones directly, doing the
+  rest-pose/offset math in 4x4 matrices (not quaternions) since the
+  avatar's mirrored export scale corrupts quaternion math partway through
+  — see the gitignored `docs/FACIAL_ANIM_REGEN_NOTES.md` for the full
+  debugging history on that specific bug (now fixed).
+
+**On eye gaze looking "inconsistent":** that's mostly by design, not a
+bug — each glance's direction and the gap before the next one are
+randomized within the `gazeAmplitudeH/V` and `gazeIntervalMin/Max`
+ranges, specifically so it doesn't look robotic/repetitive. If it's
+reading as *too* inconsistent — glances feel too large/small, too
+frequent/rare, or you want one character to look calmer or more alert
+than another — tune the six `gaze*` fields above per character in that
+character's own `scene.json`/`scene2.json`, rather than editing
+`A2FAvatar.js`. A good first experiment: cut `gazeAmplitudeH`/
+`gazeAmplitudeV` toward 0 to confirm you're looking at gaze and not some
+other motion, then bring them back up to taste. There's no automated
+tuning for this (it's a handful of numbers, not worth scripting) — the
+"template" is the `idle` block itself, copyable between scene files and
+overridable per character.
+
 
 ### `clips` (array, required)
 Played in array order by `avatar.playSequence()`. Each entry:
@@ -674,6 +715,75 @@ a new VRM.
 
 ---
 
+## 6b. Post-process — per-phoneme mouth correction (`mouth_correction.py`)
+
+**Optional. Currently tested on `altaforte` only.** LAM's predictions drift
+toward an average, half-open mouth. Across our 4 clips, the lips never fully
+seal on M/B/P (`mouthClose` ≤ ~0.30), the jaw barely drops on open vowels
+(~0.11 `jawOpen`), rounding on W/OO is weak, and `mouthLowerDown` stays at
+~0.45 on almost every sound. This script fixes those cases after the fact.
+
+**What it does, standalone, in one command:**
+1. Loads the `.wav` and runs a wav2vec2 phoneme-recognition model
+   (`facebook/wav2vec2-lv-60-espeak-cv-ft`, HuggingFace) **on CPU**. It gets
+   time-stamped phonemes straight from the audio, so no transcript is needed.
+2. Groups the phonemes into classes (`bilabial`, `labiodental`, `sibilant`,
+   `postalveolar`, `rounded`, `rounded_open`, `open`, `spread`). Inside each
+   phoneme's window it eases a few ARKit shapes toward that class's
+   targets, with 80ms raised-cosine ramps.
+3. Writes a **new** file. Every frame outside a window, and every shape a class
+   doesn't target, stays exactly as LAM produced it.
+
+It does **not** generate facial animation itself. Its input is the
+`*_lam_converted.json` from Section 6, so run it after `parse_a2e.py`.
+
+**The full table of classes, targets, and rig limits** (F/V is approximate
+only; TH/L/T/D/N/K/G aren't corrected because the avatars have no tongue mesh)
+is in `docs/FACIAL_ANIM_REGEN_NOTES.md`.
+
+### One-time setup (Windows, no GPU needed)
+
+```powershell
+cd babylon-clay-scene\animations
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+.\.venv\Scripts\python.exe -m pip install transformers soundfile scipy numpy
+```
+
+`.venv/` is gitignored. The model weights download automatically on the first
+run into the HuggingFace cache (`%USERPROFILE%\.cache\huggingface`), which
+takes ~2.4GB on Windows. That's about double the model size, because Windows
+without Developer Mode can't use the cache's symlinks, so files get copied.
+The "To support symlinks on Windows…" warning this prints is harmless.
+Don't install `phonemizer`/espeak: the script deliberately bypasses the
+model's phoneme tokenizer, which is what would need them, and reads its
+`vocab.json` directly.
+
+### Run
+
+```powershell
+cd babylon-clay-scene\animations
+.\.venv\Scripts\python.exe mouth_correction.py `
+  ..\public\animations\altaforte_lam_converted.json `
+  ..\public\audio\altaforte.wav `
+  ..\public\animations\altaforte_lam_corrected.json
+```
+
+Takes ~30s for the 19s `altaforte` clip on CPU (model load included).
+
+| Flag | Default | Effect |
+|---|---|---|
+| `--classes` | all | Comma list of classes to apply, e.g. `--classes bilabial,open` |
+| `--strength` | `1.0` | 0–1 blend toward the class targets; lower if it looks exaggerated |
+| `--ramp` | `0.08` | Ease in/out per window, seconds (keep ≥ 2 frames at 30fps or shapes pop) |
+| `--dump-phones` | off | Print every recognized phoneme with its time, to sanity-check recognition |
+
+Point the clip's `animation` in `scene.json` at the `*_lam_corrected.json`
+file. Keeping the original `*_lam_converted.json` around makes A/B
+comparisons easy (two clip entries on the same audio).
+
+---
+
 ## 7. End-to-end workflow: audio file → animated character
 
 1. **Pick a tool that turns audio into per-frame blendshape weights.**
@@ -711,6 +821,14 @@ a new VRM.
    python animations\csv_converter.py path\to\animation_frames.csv `
      -o public\animations\my_clip_frames.json --fps 30
    ```
+
+   **Optional, LAM path only — sharpen mouth shapes** (Section 6b):
+   ```powershell
+   animations\.venv\Scripts\python.exe animations\mouth_correction.py `
+     public\animations\my_clip_frames.json public\audio\my_audio.wav `
+     public\animations\my_clip_corrected.json
+   ```
+   Then point the scene manifest at `my_clip_corrected.json` in step 5.
 
 5. **Add a clip entry to your scene manifest.** Either edit
    [public/scene.json](public/scene.json) (or `public/scene2.json`) directly,

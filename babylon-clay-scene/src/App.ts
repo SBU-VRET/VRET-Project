@@ -398,9 +398,9 @@ export class App {
 				secondCharacter.playSequence();
 			}));
 
-		// avatar.clips.forEach((clip: any, i: number) => {
-		// 	container.appendChild(makeBtn(clip.id, () => avatar.playClip(i)));
-		// });
+		avatar.clips.forEach((clip: any, i: number) => {
+			container.appendChild(makeBtn(clip.id, () => avatar.playClip(i)));
+		});
 
 		container.appendChild(makeBtn('Stop', () => {
 			avatar.stopAndReset();

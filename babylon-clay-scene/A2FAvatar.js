@@ -92,9 +92,16 @@ export class A2FAvatar {
     this._clipDone      = false;
     this._aborted       = false;
 
-    // Idle state
+    // Idle state. Defaults match what was previously hardcoded in
+    // _tickGaze/_tickHeadSway -- overridable per character via scene.json's
+    // "idle" block (see ANIMATION_PIPELINE.md's idle/procedural settings
+    // section), same mechanism blink/breath already used.
     this.idleConfig     = { blinkIntervalMin: 2, blinkIntervalMax: 5, blinkDuration: 0.15,
-                            breathCycleSpeed: 0.4, breathJawAmount: 0.012 };
+                            breathCycleSpeed: 0.4, breathJawAmount: 0.012,
+                            gazeAmplitudeH: 0.12, gazeAmplitudeV: 0.06,
+                            gazeEaseDuration: 0.35, gazeHoldDuration: 1.2,
+                            gazeIntervalMin: 1.5, gazeIntervalMax: 4.0,
+                            headSwayIntensity: 1.0 };
     this.nextBlinkAt    = 0;
     this.blinkTimer     = -1;
     this.idleElapsed    = 0;
@@ -488,16 +495,19 @@ export class A2FAvatar {
   _tickGaze(dt) {
     if (!this.leftEyeBone && !this.rightEyeBone) return;
     this.gazeElapsed += dt;
+    const cfg = this.idleConfig;
 
     if (this.gazeTimer < 0) {
       if (this.gazeElapsed >= this.nextGazeAt) {
         // Amplitude tuned down from an initial 0.3/0.2 rad (~17/11 deg),
         // which looked like a dramatic eye-roll rather than a subtle glance
-        // once the rotation math was actually correct. Adjust further if
-        // this still reads as too much or too little.
+        // once the rotation math was actually correct. Configurable per
+        // character via scene.json's "idle" block (gazeAmplitudeH/V) --
+        // adjust there rather than hardcoding if a character still reads
+        // as too much or too little.
         this.gazeTarget = {
-          h: (Math.random() * 2 - 1) * 0.12,
-          v: (Math.random() * 2 - 1) * 0.06,
+          h: (Math.random() * 2 - 1) * cfg.gazeAmplitudeH,
+          v: (Math.random() * 2 - 1) * cfg.gazeAmplitudeV,
         };
         this.gazeTimer = 0;
       }
@@ -505,8 +515,8 @@ export class A2FAvatar {
 
     if (this.gazeTimer >= 0) {
       this.gazeTimer += dt;
-      const easeDuration = 0.35;
-      const holdDuration = 1.2;
+      const easeDuration = cfg.gazeEaseDuration;
+      const holdDuration = cfg.gazeHoldDuration;
 
       if (this.gazeTimer < easeDuration) {
         const t = this.gazeTimer / easeDuration;
@@ -519,7 +529,8 @@ export class A2FAvatar {
       } else {
         this.gazeCurrent = { h: 0, v: 0 };
         this.gazeTimer = -1;
-        this.nextGazeAt = this.gazeElapsed + 1.5 + Math.random() * 2.5;
+        this.nextGazeAt = this.gazeElapsed + cfg.gazeIntervalMin
+          + Math.random() * (cfg.gazeIntervalMax - cfg.gazeIntervalMin);
       }
     }
 
@@ -583,10 +594,14 @@ export class A2FAvatar {
     if (!this.headBone) return;
     this.headSwayElapsed += dt;
     const t = this.headSwayElapsed;
+    // Overall multiplier, configurable per character via scene.json's
+    // "idle" block (headSwayIntensity) -- scales all three axes uniformly
+    // rather than exposing each sine term separately.
+    const intensity = this.idleConfig.headSwayIntensity;
 
-    const pitch = Math.sin(t * 0.37) * 0.035 + Math.sin(t * 0.91 + 1.3) * 0.015;
-    const yaw   = Math.sin(t * 0.29 + 0.6) * 0.05 + Math.sin(t * 0.77 + 2.1) * 0.02;
-    const roll  = Math.sin(t * 0.23 + 2.4) * 0.02;
+    const pitch = (Math.sin(t * 0.37) * 0.035 + Math.sin(t * 0.91 + 1.3) * 0.015) * intensity;
+    const yaw   = (Math.sin(t * 0.29 + 0.6) * 0.05 + Math.sin(t * 0.77 + 2.1) * 0.02) * intensity;
+    const roll  = (Math.sin(t * 0.23 + 2.4) * 0.02) * intensity;
 
     const offset = BABYLON.Quaternion.RotationYawPitchRoll(yaw, pitch, roll);
     this.headBone.rotationQuaternion = this._headRestQuat.multiply(offset);

@@ -16,6 +16,12 @@
             "delayAfter": 0.5
         },
         {
+            "id": "lam_corrected_altaforte",
+            "animation": "animations/altaforte_lam_corrected.json",
+            "audio": "audio/altaforte.wav",
+            "delayAfter": 0.5
+        },
+        {
             "id": "lam_test_through_glass",
             "animation": "animations/through_glass_lam_converted.json",
             "audio": "audio/through_glass.wav",
