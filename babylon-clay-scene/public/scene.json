@@ -11,19 +11,19 @@
     "clips": [
         {
             "id": "lam_test_altaforte",
-            "animation": "animations/altaforte_lam_test_converted.json",
+            "animation": "animations/altaforte_lam_converted.json",
             "audio": "audio/altaforte.wav",
             "delayAfter": 0.5
         },
         {
             "id": "lam_test_through_glass",
-            "animation": "animations/through_glass_lam_test_converted.json",
+            "animation": "animations/through_glass_lam_converted.json",
             "audio": "audio/through_glass.wav",
             "delayAfter": 0.5
         },
         {
             "id": "lam_test_lightspent",
-            "animation": "animations/lightspent_lam_test_converted.json",
+            "animation": "animations/lightspent_lam_converted.json",
             "audio": "audio/lightspent.wav",
             "delayAfter": 0.5
         }

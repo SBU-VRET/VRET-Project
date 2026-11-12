@@ -10,7 +10,7 @@
     "clips": [
         {
             "id": "lam_test_goodly",
-            "animation": "animations/goodly_lam_test_converted.json",
+            "animation": "animations/goodly_lam_converted.json",
             "audio": "audio/goodly.wav",
             "delayAfter": 0.5
         }

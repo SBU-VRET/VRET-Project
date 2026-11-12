@@ -397,18 +397,119 @@ Unlike `a2f_extractor.py`, LAM itself isn't something to port into this repo
 not a small standalone script. You run it from its own clone, then convert
 its output here with `parse_a2e.py`.
 
-### No local NVIDIA GPU? Use the Colab notebook
+### No local NVIDIA GPU? Use Colab — automated via the CLI (preferred)
 
 LAM needs CUDA, so it won't run at all on a machine with only Intel/AMD
 integrated graphics (no CUDA support) — confirmed this is the case on at
 least one team laptop.
 
+As of 11/10, the manual notebook below (still documented further down, and
+still the right place to start if something about the automated path
+breaks) has a headless equivalent driven by Google's official
+`google-colab-cli`:
+[animations/lam_audio2expression_colab.py](animations/lam_audio2expression_colab.py)
+(same copy kept in `team/fahim/audio2expression/`). This replaces clicking
+through notebook cells and the flaky upload-picker widget with a scriptable
+upload → run → download → teardown sequence, and skips the slow setup
+steps (venv, clone, deps, weights) on repeat runs against the same session.
+
+The CLI is Linux/macOS only, so on Windows this runs from WSL2.
+
+**One-time setup (per machine) — scripted:**
+`team/fahim/audio2expression/setup_windows.ps1` and `setup_wsl.sh` automate
+steps 1-2 below between them:
+1. **In an elevated (Run as Administrator) PowerShell window**, from the
+   repo root: `.\team\fahim\audio2expression\setup_windows.ps1`. Enables
+   WSL2 and installs Ubuntu if either is missing (may ask for a restart
+   partway through — just re-run the script after rebooting). This step
+   cannot enable hardware virtualization in BIOS/UEFI firmware, though —
+   that's a firmware setting outside any script's reach, and has to be
+   turned on manually first if it isn't already (reboot into firmware
+   setup, look for "Intel VT-x"/"SVM Mode"/"Virtualization Technology").
+2. **Inside WSL** (`wsl -d Ubuntu`, then `cd` into
+   `team/fahim/audio2expression`): `bash setup_wsl.sh`. Installs
+   python3-pip/venv, creates the `~/colab-cli-env` venv, and installs
+   `google-colab-cli` + `keyrings.alt` into it. **`keyrings.alt` is
+   required**, not optional — without it, python's `keyring` has no usable
+   backend in a bare WSL install, the OAuth token silently fails to save,
+   and every single run re-prompts for a fresh login.
+3. **One-time Google login** (can't be scripted — needs your own browser
+   and Google account): `source ~/colab-cli-env/bin/activate && colab
+   sessions`. It prints a URL — open it, approve with whichever Google
+   account should run/bill the Colab compute, and paste the authorization
+   code back. Saved to `~/.config/colab-cli/sessions.json`, entirely
+   inside WSL's own filesystem — never touches this repo, nothing to
+   accidentally commit.
+
+**Per-run — simplest way:** `team/fahim/audio2expression/run_colab.sh`
+wraps the whole sequence below into one command that only needs the audio
+file(s) as input:
+```bash
+# From WSL, in team/fahim/audio2expression/
+./run_colab.sh /mnt/c/Users/fjawad/Downloads/VRET/babylon-clay-scene/public/audio/altaforte.wav
+# multiple clips in one batch:
+./run_colab.sh clip1.wav clip2.wav clip3.wav
+# or point it at a folder -- every .wav directly inside gets processed:
+./run_colab.sh /mnt/c/Users/fjawad/Downloads/VRET/babylon-clay-scene/public/audio/
+# about to run another batch right away? keep the GPU session alive:
+./run_colab.sh --keep clip1.wav
+```
+It checks `colab sessions` for an already-running `lam` session and
+reuses it if present, provisions a fresh T4 one if not, uploads each
+clip, runs `lam_audio2expression_colab.py`, and downloads each result as
+`<clip>_lam.json` next to its input `.wav`. **Releases the GPU session by
+default once the run finishes**, to avoid burning free-tier compute-unit
+quota on an idle VM — pass `--keep` only when you know you're about to
+run another batch right away and want to skip the slow setup
+(venv/clone/deps/weights) next time. Folder support is script-side only —
+the underlying `colab upload` command itself only takes one local file at
+a time, no directory/recursive option.
+
+**What it's doing under the hood**, if you want to run the steps by hand
+instead (e.g. to debug a failure):
+```bash
+source ~/colab-cli-env/bin/activate
+
+# 1. Provision a GPU VM as a named session -- unlike `colab run`'s
+#    ephemeral one-shot VMs, a `colab new` session already stays up on its
+#    own until you `colab stop` it, so setup only happens once even
+#    across several batches (no --keep needed -- that flag's `colab run`
+#    only, and doesn't exist on `colab new`).
+colab new -s lam --gpu T4
+
+# 2. Upload each clip you want processed (repeat per clip)
+colab upload -s lam ./altaforte.wav /content/altaforte.wav
+
+# 3. Run setup + inference. A second call against the same session skips
+#    straight to inference on whatever new clips were uploaded since.
+colab exec -s lam -f lam_audio2expression_colab.py
+
+# 4. Pull each clip's output JSON back down (path printed by the script)
+colab download -s lam /content/LAM_Audio2Expression/exp/audio2exp_altaforte/altaforte.json ./altaforte.json
+
+# 5. Release the VM when done for now (or leave it running and repeat
+#    from step 2 for the next batch)
+colab stop -s lam
+```
+
+Then convert each downloaded JSON with `parse_a2e.py` exactly as in the
+local-run steps below.
+
+**Status (11/10): confirmed working end-to-end.** Ran it for real against
+`altaforte.wav` — output checked against known-good ranges (`jawOpen` max
+0.56, `browInnerUp` max 0.55, blinks present), matching prior good LAM
+runs. This is now the default path; the manual notebook stays documented
+below as a fallback/reference.
+
+### Manual notebook (reference / fallback)
+
 [animations/LAM_Audio2Expression_Colab.ipynb](animations/LAM_Audio2Expression_Colab.ipynb)
-runs the same setup on a free Google Colab NVIDIA T4 GPU instead of locally.
-A few path assumptions inside it are flagged inline as unconfirmed, since
-LAM's own README doesn't fully reconcile its own weight/output folder layout
-— **run it cell-by-cell and check each cell's output before moving to the
-next**, rather than running the whole notebook blindly end to end.
+runs the same setup on a free Google Colab NVIDIA T4 GPU instead of locally,
+driven by hand through the Colab UI rather than the CLI above. A few path
+assumptions inside it are flagged inline as unconfirmed, since LAM's own
+README doesn't fully reconcile its own weight/output folder layout — **run
+it cell-by-cell and check each cell's output before moving to the next**,
+rather than running the whole notebook blindly end to end.
 
 1. **Upload the notebook.** Go to `colab.research.google.com` → File → Upload
    notebook → select `animations/LAM_Audio2Expression_Colab.ipynb`.
