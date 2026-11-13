@@ -73,6 +73,9 @@ function waitUntil(scene, conditionFn) {
 // ─── Main class ──────────────────────────────────────────────────────────────
 export class A2FAvatar {
 
+  // Every live avatar, so a speaking one can cue listener nods on the others.
+  static _instances = new Set();
+
   constructor(scene) {
     this.scene = scene;
 
@@ -108,7 +111,9 @@ export class A2FAvatar {
                             gazeAmplitudeH: 0.12, gazeAmplitudeV: 0.06,
                             gazeEaseDuration: 0.35, gazeHoldDuration: 1.2,
                             gazeIntervalMin: 1.5, gazeIntervalMax: 4.0,
-                            headSwayIntensity: 1.0 };
+                            headSwayIntensity: 1.0,
+                            nodAmount: 0.06, nodAttack: 0.14, nodRelease: 0.32,
+                            listenerNodChance: 0.35, listenerNodScale: 0.6, listenerNodMinGap: 2.5 };
     this.nextBlinkAt    = 0;
     this.blinkTimer     = -1;
     this.idleElapsed    = 0;
@@ -133,6 +138,17 @@ export class A2FAvatar {
     this.headBone      = null;
     this._headRestQuat = null;
     this.headSwayElapsed = 0;
+
+    // Speech-driven head nods -- timed dips from the clip's "headNods" list
+    // (written by animations/head_nods.py from the audio's loudness/pitch
+    // peaks), layered on top of the sway. Listener nods: while another avatar
+    // speaks, this one sometimes answers that speaker's stronger nods.
+    this.nodClock            = 0;
+    this.activeNods          = [];   // { t: seconds since start, amp: radians }
+    this.nextNodIdx          = 0;
+    this.pendingListenerNods = [];   // { at: nodClock time, strength }
+    this.lastListenerNodAt   = -Infinity;
+    A2FAvatar._instances.add(this);
 
     // Transition state
     this.transitionDuration  = 0.25;
@@ -422,6 +438,7 @@ export class A2FAvatar {
 
     // Reset state
     this.playbackTime = 0;
+    this.nextNodIdx = 0;
     this._clipDone = false;
 
     // Go
@@ -443,6 +460,8 @@ export class A2FAvatar {
     this._clipDone = true;   // unblock any waiting playClip
     if (this.audio) { this.audio.pause(); this.audio = null; }
     this._resetAllShapes();
+    this.activeNods = [];
+    this.pendingListenerNods = [];
     this._setState(State.IDLE);
   }
 
@@ -622,6 +641,114 @@ export class A2FAvatar {
 
     const offset = BABYLON.Quaternion.RotationYawPitchRoll(yaw, pitch, roll);
     this.headBone.rotationQuaternion = this._headRestQuat.multiply(offset);
+
+    const nod = this._tickNods(dt);
+    if (Math.abs(nod) > 1e-5) this._applyNod(nod);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  Head nods
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Starts every nod whose dip should already be under way at the current
+  // playback time. A nod's "time" in the file is its lowest point, so it starts
+  // nodAttack earlier; a late start (frame hitch, seek) is fast-forwarded.
+  _triggerSpeechNods(animData) {
+    const nods = animData.headNods;
+    if (!nods) return;
+    const { nodAttack, nodRelease } = this.idleConfig;
+    while (this.nextNodIdx < nods.length) {
+      const nod = nods[this.nextNodIdx];
+      const late = this.playbackTime - (nod.time - nodAttack);
+      if (late < 0) break;
+      this.nextNodIdx++;
+      if (late >= nodAttack + nodRelease) continue;
+      this._startNod(nod.strength, late);
+      this._cueListeners(nod.strength);
+    }
+  }
+
+  _startNod(strength, alreadyElapsed = 0) {
+    this.activeNods.push({ t: alreadyElapsed, amp: strength * this.idleConfig.nodAmount });
+  }
+
+  _cueListeners(strength) {
+    if (strength < 0.5) return;
+    for (const other of A2FAvatar._instances) {
+      if (other !== this && other.state === State.IDLE) other._maybeListenerNod(strength);
+    }
+  }
+
+  _maybeListenerNod(strength) {
+    const cfg = this.idleConfig;
+    if (this.nodClock - this.lastListenerNodAt < cfg.listenerNodMinGap) return;
+    if (Math.random() >= cfg.listenerNodChance) return;
+    const at = this.nodClock + 0.3 + Math.random() * 0.4;
+    this.pendingListenerNods.push({ at, strength: strength * cfg.listenerNodScale });
+    this.lastListenerNodAt = at;
+  }
+
+  // Advances all nods and returns the summed pitch (radians, positive = down).
+  // Each nod eases down over nodAttack and back up over nodRelease, so it reads
+  // as a quick dip rather than a symmetric bob.
+  _tickNods(dt) {
+    this.nodClock += dt;
+    const { nodAttack, nodRelease, nodAmount } = this.idleConfig;
+
+    if (this.pendingListenerNods.length) {
+      const due = this.pendingListenerNods.filter(n => n.at <= this.nodClock);
+      this.pendingListenerNods = this.pendingListenerNods.filter(n => n.at > this.nodClock);
+      for (const n of due) this._startNod(n.strength);
+    }
+
+    let angle = 0;
+    for (const n of this.activeNods) {
+      n.t += dt;
+      const shape = n.t < nodAttack
+        ? 0.5 - 0.5 * Math.cos(Math.PI * n.t / nodAttack)
+        : 0.5 + 0.5 * Math.cos(Math.PI * Math.min(1, (n.t - nodAttack) / nodRelease));
+      angle += n.amp * shape;
+    }
+    this.activeNods = this.activeNods.filter(n => n.t < nodAttack + nodRelease);
+    return Math.min(angle, nodAmount * 1.5);
+  }
+
+  // Tilts the head down by `angle` about the character's own left-right axis,
+  // in world space -- same matrix approach as _tickGaze, for the same reason
+  // (the root's mirrored (1,1,-1) scale corrupts quaternion math). "Forward" is
+  // the horizontal direction from the head bone to the eyes, and the rotation
+  // sign is checked against it each frame, so "down" holds whatever the
+  // avatar's yaw or handedness.
+  _applyNod(angle) {
+    const head = this.headBone;
+    if (!this.leftEyeBone || !this.rightEyeBone || !head.parent) return;
+
+    head.computeWorldMatrix(true);
+    this.leftEyeBone.computeWorldMatrix(true);
+    this.rightEyeBone.computeWorldMatrix(true);
+    const eyes = this.leftEyeBone.getAbsolutePosition().add(this.rightEyeBone.getAbsolutePosition()).scale(0.5);
+    const forward = eyes.subtract(head.getAbsolutePosition());
+    forward.y = 0;
+    if (forward.lengthSquared() < 1e-10) return;
+    forward.normalize();
+
+    const axis = BABYLON.Vector3.Cross(BABYLON.Vector3.Up(), forward).normalize();
+    let nodMatrix = BABYLON.Matrix.RotationAxis(axis, angle);
+    if (BABYLON.Vector3.TransformNormal(forward, nodMatrix).y > 0) {
+      nodMatrix = BABYLON.Matrix.RotationAxis(axis, -angle);
+    }
+
+    const localMatrix = BABYLON.Matrix.Identity();
+    BABYLON.Matrix.FromQuaternionToRef(head.rotationQuaternion, localMatrix);
+    head.parent.computeWorldMatrix(true);
+    const parentWorld = head.parent.getWorldMatrix();
+    const newLocal = localMatrix.multiply(parentWorld).multiply(nodMatrix).multiply(BABYLON.Matrix.Invert(parentWorld));
+
+    const scale = new BABYLON.Vector3();
+    const rot = new BABYLON.Quaternion();
+    const pos = new BABYLON.Vector3();
+    newLocal.decompose(scale, rot, pos);
+    head.rotationQuaternion = rot;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -690,6 +817,8 @@ export class A2FAvatar {
       this._startTransition();
       return;
     }
+
+    this._triggerSpeechNods(animData);
 
     const frame = animData.frames[Math.min(frameIdx, animData.frames.length - 1)];
     if (!frame) return;

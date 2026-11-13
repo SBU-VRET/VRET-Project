@@ -12,6 +12,9 @@ in the Babylon.js scene. Covers:
      converted LAM JSON: recognizes phonemes from the `.wav` and sharpens
      mouth shapes LAM under-articulates (M/B/P closure, open vowels,
      rounding, etc.). See Section 6b.
+   - `animations/head_nods.py` — optional, runs after `mouth_correction.py`:
+     finds stressed syllables in the `.wav` (loudness + pitch peaks) and adds
+     a `headNods` list the runtime plays as head dips. See Section 6c.
    - `animations/a2f_extractor.py` — calls **NVIDIA Audio2Face-3D** directly over
      its gRPC API and writes runtime-ready JSON in one step (no manual export).
      Its hosted cloud endpoint is now deprecated — see Section 4.
@@ -80,7 +83,13 @@ the 0.1 both current scenes use; every other `idle` value is the default from
     "gazeHoldDuration": 1.2,
     "gazeIntervalMin": 1.5,
     "gazeIntervalMax": 4.0,
-    "headSwayIntensity": 1.0
+    "headSwayIntensity": 1.0,
+    "nodAmount": 0.06,
+    "nodAttack": 0.14,
+    "nodRelease": 0.32,
+    "listenerNodChance": 0.35,
+    "listenerNodScale": 0.6,
+    "listenerNodMinGap": 2.5
   },
   "clips": [
     {
@@ -137,6 +146,12 @@ blink/breath already used.
 | `gazeIntervalMin`  | number | 1.5     | Min seconds between glances (from the end of the previous one) |
 | `gazeIntervalMax`  | number | 4.0     | Max seconds between glances |
 | `headSwayIntensity`| number | 1.0     | Multiplier on all three head-sway axes (pitch/yaw/roll) — 0 disables sway, 2.0 doubles it |
+| `nodAmount`        | number | 0.06    | Head dip at full nod strength (radians, ~3.4°). 0 disables speech and listener nods |
+| `nodAttack`        | number | 0.14    | Seconds to ease down into a nod (it starts this long before the nod's time in the file) |
+| `nodRelease`       | number | 0.32    | Seconds to ease back up |
+| `listenerNodChance`| number | 0.35    | While another avatar is speaking, chance this one answers each of that speaker's stronger nods (strength ≥ 0.5). 0 disables listener nods |
+| `listenerNodScale` | number | 0.6     | Listener nod size relative to the speaker nod that cued it |
+| `listenerNodMinGap`| number | 2.5     | Min seconds between this avatar's listener nods |
 
 ### Mouth movement, head sway, and eye gaze — what drives each
 Three separate things move the face/head at idle, easy to conflate:
@@ -153,6 +168,15 @@ Three separate things move the face/head at idle, easy to conflate:
   unconditionally (idle and speaking both), scaled by `headSwayIntensity`.
   Not driven by any generated data — LAM's ARKit-52 output has no head
   pose at all — so it's purely procedural.
+- **Head nods** are short dips layered on top of the sway. While speaking,
+  they come from the clip's `headNods` list (written by `head_nods.py`
+  from the audio, Section 6c), so they land on stressed words. While
+  another avatar speaks, a listener sometimes answers that speaker's
+  stronger nods a beat later (`listenerNod*` settings). A clip without
+  `headNods` gets sway only. The dip is applied in world space about the
+  character's own left-right axis, and its sign is checked against the
+  head-to-eyes direction each frame, so the mirrored export scale that broke
+  eye gaze can't flip it.
 - **Eye gaze** (`_tickGaze()`) picks a random small glance target at a
   random interval, eases into it, holds, eases back to neutral, repeats.
   Also purely procedural — this avatar rig has no gaze blendshapes, so it
@@ -283,6 +307,11 @@ expects in `_tickPlaying` ([A2FAvatar.js:441](A2FAvatar.js)):
   runtime indexes by `fps` not by `time`.
 - `frames[i].weights` — One float per name in `blendShapeNames`. Values are
   morph influences, typically 0–1.
+- `headNods` (optional) — `[{ "time": 0.36, "strength": 1.0 }, ...]`, added by
+  `head_nods.py` (Section 6c). `time` is the nod's lowest point in seconds from
+  clip start, on the same clock as `frames` (so `syncOffset` shifts it too);
+  `strength` (0.4–1) scales the idle block's `nodAmount`. `headNodsParams`
+  records the flags it was made with and isn't read at runtime.
 
 ### Morph-target naming
 
@@ -830,6 +859,74 @@ comparisons easy (two clip entries on the same audio).
 
 ---
 
+## 6c. Post-process — speech-driven head nods (`head_nods.py`)
+
+**Optional. Tested on `altaforte` (live in `scene.json` as
+`lam_corrected_nod_altaforte`); also run as a dry check on the other 3 clips.**
+LAM outputs no head pose, so on its own the head only does the slow
+procedural sway, which ignores what's being said. Speakers dip their head
+on stressed syllables, and those line up with peaks in loudness and pitch.
+This script finds those peaks in the `.wav` and adds a `headNods` list to
+the animation JSON; `A2FAvatar` plays each as a quick dip on top of the
+sway (Section 2, "what drives each").
+
+**Why audio-driven** (decided 11/13, over three alternatives):
+- It follows the speech, and runs on the laptop CPU in ~2.5s for the 19s
+  `altaforte` clip, with no model download, Colab or GPU.
+- It's deterministic and tunable per character, which matters for a
+  therapy scene (e.g. a stiffer officer, or toning it down with the scene's
+  softening options). An audio-to-head-pose ML model would need another
+  Colab step plus retargeting, and tends to be jittery and hard to steer.
+- Working from the file ahead of time lets a nod start before the stressed
+  sound, as real speakers do. Detecting emphasis live in the browser has no
+  lookahead, so nods would always land late.
+- Hand-placing nods in `scene.json` doesn't scale with more voice lines.
+
+**What it does:**
+1. Splits the audio into 10ms steps and measures loudness and pitch
+   (autocorrelation, 70–400Hz) in each, keeping only voiced speech.
+2. Scores each step by how far loudness (60%) and pitch (40%) sit above the
+   clip's own average, smoothed to syllable length (~90ms).
+3. Picks peaks above `--threshold`, at least `--min-gap` apart, and maps
+   their height to a strength of 0.4–1.
+4. Writes a copy of the input with `headNods` added. Face weights are copied
+   through untouched, so it chains after `mouth_correction.py`:
+   `*_lam_converted.json` → `*_lam_corrected.json` → `*_lam_corrected_nod.json`.
+   It can also run straight on a `*_lam_converted.json`.
+
+**Check on `altaforte`** (Pound's "Altaforte"): every nod at the defaults lands
+on a stressed word — **hot**, **great**, **when**, **kill**, **foul**,
+**light**nings, **crim**son, **fierce**, **roar**, **mu**sic, **shriek**,
+o**pos**ing, **all** — 13 nods over 19s (0.68/s), longest gap ~1.9s. The
+other clips get 0.3–0.5/s at the defaults.
+
+### Run
+
+Same `.venv` as Section 6b (only needs `numpy`, `scipy`, `soundfile`, not
+torch).
+
+```powershell
+cd babylon-clay-scene\animations
+.\.venv\Scripts\python.exe head_nods.py `
+  ..\public\animations\altaforte_lam_corrected.json `
+  ..\public\audio\altaforte.wav `
+  ..\public\animations\altaforte_lam_corrected_nod.json
+```
+
+| Flag | Default | Effect |
+|---|---|---|
+| `--threshold` | `0.7` | How prominent a syllable must be to get a nod (z-score). `0.5` adds weaker words, including some like "and"; `0.9` keeps only the strongest |
+| `--min-gap` | `0.7` | Min seconds between nods; lower = busier head |
+| `--lead` | `0.05` | Seconds the nod's lowest point lands before the syllable's peak |
+| `--dump` | off | Print every nod's time and strength, to check against the words |
+
+How big and how fast each nod looks is set per character at runtime, not
+here: `nodAmount`, `nodAttack`, `nodRelease` in the manifest's `idle` block
+(Section 2). Point the clip's `animation` at the `*_nod.json` file; keeping
+the un-nodded file makes A/B easy.
+
+---
+
 ## 7. End-to-end workflow: audio file → animated character
 
 1. **Pick a tool that turns audio into per-frame blendshape weights.**
@@ -875,6 +972,15 @@ comparisons easy (two clip entries on the same audio).
      public\animations\my_clip_corrected.json
    ```
    Then point the scene manifest at `my_clip_corrected.json` in step 5.
+
+   **Optional — add speech-driven head nods** (Section 6c), on the corrected
+   file (or straight on the converted one):
+   ```powershell
+   animations\.venv\Scripts\python.exe animations\head_nods.py `
+     public\animations\my_clip_corrected.json public\audio\my_audio.wav `
+     public\animations\my_clip_corrected_nod.json
+   ```
+   Then point the scene manifest at `my_clip_corrected_nod.json` instead.
 
 5. **Add a clip entry to your scene manifest.** Either edit
    [public/scene.json](public/scene.json) (or `public/scene2.json`) directly,

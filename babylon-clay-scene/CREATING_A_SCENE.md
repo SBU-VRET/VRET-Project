@@ -61,14 +61,23 @@ This turns your `.wav` into a JSON file of per-frame ARKit-52 blendshape
 weights, using **LAM Audio2Expression** (the current preferred tool — see
 `docs/AUDIO2FACE_VS_AUDIO2EXPRESSION.md`).
 
-1. Open `animations/LAM_Audio2Expression_Colab.ipynb` in Google Colab (no
-   local GPU needed) and run it top to bottom — it'll prompt you to upload
-   your `.wav` (multiple at once is fine) and downloads a result JSON per
-   clip.
-2. Convert the downloaded JSON into the runtime format:
+1. Run LAM on a free Colab GPU (no local GPU needed). Preferred: from WSL,
+   `team/fahim/audio2expression/run_colab.sh my_clip.wav` (one command, writes
+   `my_clip_lam.json` next to the input; one-time setup in
+   `ANIMATION_PIPELINE.md` §6). Fallback: open
+   `animations/LAM_Audio2Expression_Colab.ipynb` in Colab and run it top to
+   bottom.
+2. Convert the result into the runtime format:
    ```
-   python animations/parse_a2e.py path/to/downloaded.json -o public/animations/my_clip_frames.json
+   python animations/parse_a2e.py path/to/my_clip_lam.json -o public/animations/my_clip_lam_converted.json
    ```
+3. Optional, recommended — sharpen mouth shapes, then add speech-driven head
+   nods (both local CPU, from `animations/` with its `.venv`; §6b and §6c):
+   ```
+   .venv/Scripts/python.exe mouth_correction.py ../public/animations/my_clip_lam_converted.json ../public/audio/my_clip.wav ../public/animations/my_clip_lam_corrected.json
+   .venv/Scripts/python.exe head_nods.py ../public/animations/my_clip_lam_corrected.json ../public/audio/my_clip.wav ../public/animations/my_clip_lam_corrected_nod.json
+   ```
+   Point the manifest at whichever file is last in the chain.
 
 Full details, troubleshooting, and the tuning knobs tried so far (brow
 movement, smoothing, etc.) are in `ANIMATION_PIPELINE.md`.
@@ -104,7 +113,13 @@ A manifest is a JSON file like `public/scene.json`:
     "gazeHoldDuration": 1.2,
     "gazeIntervalMin": 1.5,
     "gazeIntervalMax": 4.0,
-    "headSwayIntensity": 1.0
+    "headSwayIntensity": 1.0,
+    "nodAmount": 0.06,
+    "nodAttack": 0.14,
+    "nodRelease": 0.32,
+    "listenerNodChance": 0.35,
+    "listenerNodScale": 0.6,
+    "listenerNodMinGap": 2.5
   },
   "clips": [
     {
@@ -126,7 +141,10 @@ A manifest is a JSON file like `public/scene.json`:
 - `idle` — optional; omit fields to use the defaults shown above.
   Head sway and eye-gaze saccades also run automatically during idle (and
   during speech), and can be tuned with the extra `idle` fields listed in
-  `ANIMATION_PIPELINE.md` §2.
+  `ANIMATION_PIPELINE.md` §2. The `nod*` fields set how big/fast head nods
+  look; speech nods only happen on clips whose animation file went through
+  `head_nods.py` (step 3), while listener nods (`listenerNod*`) need no
+  extra step.
 - `clips` — one entry per line, played in order. `animation`/`audio` paths
   are relative to `public/`. Set `delayAfter: 0` on the last clip.
 

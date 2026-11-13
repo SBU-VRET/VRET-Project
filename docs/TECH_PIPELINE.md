@@ -33,10 +33,12 @@ flowchart LR
     end
 
     subgraph F_facial["🟦 Fahim"]
-    FaceTool["Audio2Face / LAM"]
-    AnimJSON
+    FaceTool["LAM via run_colab.sh"] --> ParseA2E["parse_a2e.py"] -->|"optional"| MouthCorr["mouth_correction.py"] -->|"optional"| HeadNods["head_nods.py"]
+    ParseA2E --> AnimJSON
+    MouthCorr --> AnimJSON
+    HeadNods --> AnimJSON
     end
-    WAV --> FaceTool --> AnimJSON
+    WAV --> FaceTool
 
     VRM --> SceneJSON
     AnimJSON --> SceneJSON
@@ -60,7 +62,7 @@ flowchart LR
 
     classDef tool fill:#6c9bd1,stroke:#2c4a6b,stroke-width:2px,color:#fff;
     classDef artifact fill:#fbe7a1,stroke:#a87f1a,stroke-width:1px,color:#000;
-    class Library,Unreal,BJSE,PyScript,QwenTTS,FaceTool,Runtime,IdleTool tool
+    class Library,Unreal,BJSE,PyScript,QwenTTS,FaceTool,ParseA2E,MouthCorr,HeadNods,Runtime,IdleTool tool
     class VRM,GLB,Prebuilt,BabylonScene,DialogueJSON,WAV,AnimJSON,SceneJSON,IdleDesc,VRMAFile artifact
 
     style K_export stroke:#10AC84,stroke-width:2px
@@ -75,6 +77,7 @@ flowchart LR
 - No owner (⬜) is implicit: `Library`, `VRM`, `BJSE`, `BabylonScene` sit outside every colored box.
 - Kevin and Fahim each appear in more than one box — they own several disconnected parts of this flow, not one contiguous chunk.
 - `QwenTTS` mechanics (voice cloning, local vs. hosted): Stage 3, `docs/QWENTTS.md`.
+- Facial animation chain (Stage 4): LAM on Colab → `parse_a2e.py` → optional `mouth_correction.py` → optional `head_nods.py`, each writing the same `AnimJSON` format, so any step's output can go straight into the scene.
 
 ---
 
@@ -182,6 +185,9 @@ flowchart LR
     ParseA2E -->|"optional"| MouthCorr["<b>mouth_correction.py</b><br/>local CPU, no GPU<br/>wav2vec2 phoneme model"]
     WAV -.->|"same .wav"| MouthCorr
     MouthCorr --> CorrectedJSON["<b>VRET AnimationJSON (corrected)</b><br/>animations/*_lam_corrected.json"]
+    CorrectedJSON -->|"optional"| HeadNods["<b>head_nods.py</b><br/>local CPU, no model<br/>loudness + pitch peaks"]
+    WAV -.->|"same .wav"| HeadNods
+    HeadNods --> NodJSON["<b>VRET AnimationJSON (+ headNods)</b><br/>animations/*_lam_corrected_nod.json"]
     CSVConv -.-> RuntimeJSON
     end
 
@@ -190,8 +196,8 @@ flowchart LR
     classDef tool fill:#6c9bd1,stroke:#2c4a6b,stroke-width:2px,color:#fff;
     classDef deprecated fill:#95a5a6,stroke:#c0392b,stroke-width:2px,color:#fff,stroke-dasharray: 4 3;
     classDef artifact fill:#fbe7a1,stroke:#a87f1a,stroke-width:1px,color:#000;
-    class RunColabSH,LAMColabCLI,LAMColabTool,LAMLocal,ParseA2E,MouthCorr tool
-    class CorrectedJSON artifact
+    class RunColabSH,LAMColabCLI,LAMColabTool,LAMLocal,ParseA2E,MouthCorr,HeadNods tool
+    class CorrectedJSON,NodJSON artifact
     class A2F,A2FDirect,CSVConv deprecated
     class WAV,RuntimeJSON artifact
 ```
@@ -200,6 +206,8 @@ flowchart LR
 - **Build process changed (11/10): Colab is now driven headlessly via the CLI, not a notebook you click through by hand — confirmed working end-to-end.** `lam_audio2expression_colab.py` (`babylon-clay-scene/animations/`, mirrored in `team/fahim/audio2expression/`) runs LAM on a free Google Colab NVIDIA T4 GPU for machines without one locally — same steps as before (own Python 3.10 venv, deps via pip, weight download, inference), invoked via Google's official `google-colab-cli` (`colab new` → `colab upload` → `colab exec -f` → `colab download` → `colab stop`), run from WSL2 since the CLI is Linux/macOS only. `team/fahim/audio2expression/run_colab.sh` wraps that whole sequence into one command that only needs the audio file(s) (or a folder of them) as input — it stops the GPU session after every run by default to protect free-tier compute-unit quota, pass `--keep` if about to run another batch right away. Setup is scripted too: `setup_windows.ps1` (enables WSL2, installs Ubuntu) and `setup_wsl.sh` (installs the venv, CLI, and `keyrings.alt` — required, or the OAuth token won't persist); the actual Google login still has to be done by hand once. The original `LAM_Audio2Expression_Colab.ipynb` still exists as a manual fallback/reference. Full step-by-step in `ANIMATION_PIPELINE.md` §6. First real run (`altaforte.wav`) produced output matching known-good ranges from prior manual LAM runs.
 - `parse_a2e.py` (LAM path): now has a real CLI (`-o`, `--quiet`), not hardcoded filenames.
 - **New optional post-process step (11/12): `mouth_correction.py`.** It runs locally on CPU, so no Colab or GPU is needed. It takes the converted LAM JSON plus the same `.wav`, recognizes phonemes from the audio itself with a wav2vec2 phoneme model (no transcript), and sharpens shapes LAM under-articulates: M/B/P lip closure, jaw drop on open vowels, rounding on W/OO, and lower lip held up on F/V/S/SH. Output is a separate `*_lam_corrected.json`, so the uncorrected file stays for A/B. Tested on `altaforte` only so far. TH/L/T/D/N/K/G aren't corrected because the avatars have no tongue mesh. Setup and flags: `ANIMATION_PIPELINE.md` §6b; per-class table: `docs/FACIAL_ANIM_REGEN_NOTES.md`.
+- **New optional post-process step (11/13): `head_nods.py`.** LAM outputs no head pose, so the head only swayed procedurally, ignoring the speech. This finds stressed syllables in the same `.wav` (loudness + pitch peaks; no model, no transcript, local CPU) and adds a `headNods` list to the animation JSON, which `A2FAvatar` plays as short dips on top of the sway (Stage 6). Face weights pass through untouched, so it chains after `mouth_correction.py` into `*_lam_corrected_nod.json`. Chosen over an audio-to-head-pose ML model (another Colab step, hard to steer), live browser detection (no lookahead, nods land late) and hand-placed nods (doesn't scale). On `altaforte`, all 13 nods land on stressed words. Flags and the full rationale: `ANIMATION_PIPELINE.md` §6c.
+- **Debug/inspection tools** (in `babylon-clay-scene/animations/` unless noted; not part of producing a clip): `check_av_sync.py` (cross-correlates audio loudness against mouth openness to measure a timing offset), `public/debug/viseme-check.html` (scrub mouth-shape weights against the audio), `inspect_vrm_morphs.py` (list a VRM's morph-target names), `check_morph_magnitude.py` (measure how far a morph target actually moves the mesh).
 - **Audio2Face-3D is explicitly not preferred going forward** — `a2f_extractor.py` (direct gRPC) is fully deprecated since its NVCF cloud endpoint is shut down; manual CSV export + `csv_converter.py` still technically works but requires self-hosting Audio2Face-3D, which needs the same GPU LAM needs anyway, for a tool that's likely not free. Kept in the repo and documented only in case self-hosted Audio2Face-3D becomes worth revisiting later.
 - All 4 of this demo's current clips went through Audio2Face → CSV (manual export, predates `a2f_extractor.py`, confirmed via git history — see `docs/FACIAL_ANIM_REGEN_NOTES.md`), with every Audio2Face parameter on them unknown/untuned. LAM was only spot-tested on one clip before this decision.
 
@@ -222,6 +230,7 @@ flowchart LR
 
 - `VRET SceneJSON` (`scene.json`/`scene2.json`) is the per-character manifest: which VRM to load, idle/breathing params, and an ordered list of clips pairing one animation JSON with one audio WAV.
 - Environment/object `.glb` references do **not** live here — they're in a separate `environment.json` manifest instead (Stage 2), loaded independently by `App.ts`.
+- Step-by-step for adding a new talking character (avatar → voice line → facial animation → manifest → `App.ts`): `babylon-clay-scene/CREATING_A_SCENE.md`. Full manifest schema, including every idle/procedural setting: `ANIMATION_PIPELINE.md` §2.
 
 ## 6. Runtime
 
@@ -236,9 +245,11 @@ flowchart LR
     AppTS --> A2FAvatar["A2FAvatar.js"]
     SceneJSON["VRET SceneJSON"] -->|"loadManifest()"| A2FAvatar
     VRM["VRM model"] -->|"ImportMeshAsync()"| A2FAvatar
-    RuntimeJSON["<b>VRET AnimationJSON</b><br/>per-frame weights"] -->|"per clip, each frame"| A2FAvatar
+    RuntimeJSON["<b>VRET AnimationJSON</b><br/>per-frame weights<br/>+ optional headNods"] -->|"per clip, each frame"| A2FAvatar
     WAV["audio/*.wav"] -->|"drives playback<br/>timing (lip-sync)"| A2FAvatar
+    A2FAvatar --> Procedural["<b>Procedural layer</b><br/>blink · eye gaze · head sway<br/>head nods (speech + listener)"]
     A2FAvatar -->|"writes morph target<br/>influence values"| LiveAvatar["Synced, animated<br/>avatar (output)"]
+    Procedural -->|"rotates head/eye bones,<br/>blink morphs"| LiveAvatar
     LiveAvatar --> Engine
     EnvJSON6["environment.json"] -->|"_loadEnvironmentObjects()<br/>-> ImportMeshAsync() per instance"| AppTS
     AppTS -->|"static meshes added<br/>directly to scene"| Engine
@@ -252,12 +263,13 @@ flowchart LR
     style K6 stroke:#10AC84,stroke-width:2px
     classDef tool fill:#6c9bd1,stroke:#2c4a6b,stroke-width:2px,color:#fff;
     classDef artifact fill:#fbe7a1,stroke:#a87f1a,stroke-width:1px,color:#000;
-    class AppTS,Engine,A2FAvatar,WebXR tool
+    class AppTS,Engine,A2FAvatar,Procedural,WebXR tool
     class BabylonScene,SceneJSON,VRM,RuntimeJSON,WAV,LiveAvatar,EnvJSON6 artifact
 ```
 
 - `App.ts` boots the Babylon Engine, loads the base `.babylon` environment, loads environment/object `.glb` assets via `environment.json` (Stage 2), then creates one `A2FAvatar` per character.
 - `A2FAvatar` is the pipeline's actual end consumer, not another conversion step. Inputs: VRM model, scene manifest, per-clip animation JSON, clip audio WAV. Output: a live, synced avatar — morph-target weights applied every render frame, timed to `audio.currentTime` so lip-sync holds even if a frame renders late.
+- On top of the generated face data, `A2FAvatar` drives a procedural layer the generators don't provide: blinking, eye gaze (eye bones), head sway, and head nods. Speech nods come from the clip's `headNods` list (Stage 4, `head_nods.py`); listener nods are the idle avatar sometimes answering the speaker's stronger nods. All of it is tunable per character in the manifest's `idle` block (`ANIMATION_PIPELINE.md` §2).
 - WebXR ships that to the Meta Quest 3/3s, the confirmed deployment target.
 - BJSE vs. Babylon Engine: see Stage 2.
 
