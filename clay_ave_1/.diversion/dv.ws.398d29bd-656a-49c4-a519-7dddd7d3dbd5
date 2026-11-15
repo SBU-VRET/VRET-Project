@@ -1,0 +1,14 @@
+{
+  "WorkspaceID": "dv.ws.398d29bd-656a-49c4-a519-7dddd7d3dbd5",
+  "RepoID": "dv.repo.196b4c45-5561-4686-b104-15b1655c73c0",
+  "Path": "C:\\Users\\amandachen\\Downloads\\Vret\\scene1\\clay_ave_1",
+  "AccountID": "Google_107805177532344103121",
+  "BranchID": "dv.branch.1",
+  "BranchName": "main",
+  "CommitID": "dv.commit.8",
+  "Paused": false,
+  "ShouldDownload": false,
+  "RepoName": "clay_ave_1",
+  "ReadOnly": false,
+  "DigestMethod": "sha1"
+}
