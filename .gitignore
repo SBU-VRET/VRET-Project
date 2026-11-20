@@ -11,9 +11,16 @@ docs/FACIAL_ANIM_REGEN_NOTES.md
 docs/MEETING_NOTES_WEEK_OF_10-16.md
 docs/MEETING_NOTES_WEEK_OF_10-26.md
 docs/MEETING_NOTES_WEEK_OF_11-16.md
+docs/MEETING_NOTES_WEEK_OF_11-23.md
 docs/PROJECT_GAPS.md
 docs/LINEAR_UPDATES.md
 babylon-clay-scene/public/models/
 valid-vrm-avatars/
 babylon-clay-scene/animations/a2f_config.json
 unreal-demo/
+
+# VRMA clip library (698 MB, CMU mocap) — copy from TLTMedia/VRET vrma/, see tools/vrma-viewer/README.md
+tools/vrma-viewer/vrma/
+
+# VRMA viewer: generated contact sheets
+tools/vrma-viewer/sheets/
