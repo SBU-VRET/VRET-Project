@@ -1,0 +1,356 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>VRMA Clip Viewer</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <!-- Same Babylon + VRM loader combo the old TLTMedia vrmaAll.html used. -->
+  <script src="https://preview.babylonjs.com/babylon.js"></script>
+  <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+  <style>
+    :root { --bg:#0d1117; --panel:#161b22; --line:#30363d; --fg:#e6edf3; --dim:#8b949e; --acc:#58a6ff;
+            --keep:#3fb950; --maybe:#d29922; --reject:#f85149; }
+    * { box-sizing:border-box }
+    html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); font:13px system-ui,sans-serif; overflow:hidden }
+    #app { display:flex; height:100% }
+    #side { width:380px; min-width:380px; display:flex; flex-direction:column; border-right:1px solid var(--line); background:var(--panel) }
+    #side .bar { padding:8px; display:flex; flex-wrap:wrap; gap:6px; border-bottom:1px solid var(--line) }
+    input,select,button { font:inherit; color:var(--fg); background:#0d1117; border:1px solid var(--line); border-radius:4px; padding:4px 6px }
+    button { cursor:pointer } button:hover { border-color:var(--acc) }
+    #search { flex:1; min-width:140px }
+    #list { flex:1; overflow-y:auto }
+    .row { padding:5px 8px; border-bottom:1px solid #21262d; cursor:pointer; display:grid; grid-template-columns:62px 1fr auto; gap:6px; align-items:baseline }
+    .row:hover { background:#1f2630 } .row.sel { background:#1f3b5c }
+    .row .id { font-family:monospace; color:var(--acc) }
+    .row .d { white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+    .row .s { color:var(--dim); font-size:11px; font-family:monospace }
+    .row.keep .id { color:var(--keep) } .row.maybe .id { color:var(--maybe) } .row.reject { opacity:.45 }
+    #count { color:var(--dim); font-size:11px; padding:4px 8px; border-bottom:1px solid var(--line) }
+    #main { flex:1; position:relative }
+    #renderCanvas { width:100%; height:100%; display:block; outline:none }
+    #hud { position:absolute; left:0; right:0; top:0; padding:10px 14px; background:linear-gradient(#0d1117ee,#0d111700); pointer-events:none }
+    #title { font-size:16px; font-weight:600 } #title .id { font-family:monospace; color:var(--acc) }
+    #stats { color:var(--dim); font-family:monospace; font-size:11px; margin-top:4px; white-space:pre-wrap }
+    #controls { position:absolute; left:0; right:0; bottom:0; padding:10px 14px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+                background:linear-gradient(#0d111700,#0d1117ee) }
+    #scrub { flex:1; min-width:200px }
+    .v-keep { border-color:var(--keep) } .v-maybe { border-color:var(--maybe) } .v-reject { border-color:var(--reject) }
+    button.on.v-keep { background:var(--keep); color:#000 } button.on.v-maybe { background:var(--maybe); color:#000 } button.on.v-reject { background:var(--reject); color:#000 }
+    #note { width:220px }
+    #help { color:var(--dim); font-size:11px; width:100% }
+    #sheet { display:none; position:fixed; inset:0; background:#fff }
+    body.sheet-mode #app { position:fixed; left:-10000px; width:480px; height:640px }
+    body.sheet-mode #sheet { display:block }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="side">
+    <div class="bar">
+      <input id="search" placeholder="search id or description (e.g. idle, wait, 140_)"/>
+      <select id="cat"></select>
+      <select id="verdictFilter">
+        <option value="">all marks</option><option value="none">unmarked</option>
+        <option value="keep">keep</option><option value="maybe">maybe</option><option value="reject">reject</option>
+      </select>
+      <select id="sort">
+        <option value="idleScore">sort: idle score</option><option value="id">sort: id</option>
+        <option value="activity">sort: activity</option><option value="duration">sort: duration</option>
+      </select>
+    </div>
+    <div id="count"></div>
+    <div id="list"></div>
+    <div class="bar">
+      <select id="model" style="flex:1"></select>
+      <button id="export" title="Download your marks as JSON">Export marks</button>
+    </div>
+  </div>
+  <div id="main">
+    <canvas id="renderCanvas"></canvas>
+    <div id="hud"><div id="title">Loading…</div><div id="stats"></div></div>
+    <div id="controls">
+      <button id="prev">◀ Prev</button><button id="play">⏸</button><button id="next">Next ▶</button>
+      <input id="scrub" type="range" min="0" max="1000" value="0"/>
+      <span id="time" style="font-family:monospace;color:var(--dim)">0.0s</span>
+      <select id="speed"><option>0.5</option><option selected>1</option><option>2</option></select>
+      <button class="v-keep" data-v="keep">Keep (1)</button>
+      <button class="v-maybe" data-v="maybe">Maybe (2)</button>
+      <button class="v-reject" data-v="reject">Reject (3)</button>
+      <input id="note" placeholder="note (Enter to save)"/>
+      <div id="help">↑/↓ or J/K: prev/next clip · Space: pause · 1/2/3: keep/maybe/reject · F: front view · S: side view · marks save to verdicts.json</div>
+    </div>
+  </div>
+</div>
+<canvas id="sheet"></canvas>
+
+<script type="module">
+BABYLON.TransformNode.prototype.getTotalVertices ??= function () { return 0; };
+const $ = (id) => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+// Contact-sheet mode (?sheet=ID): renders 6 frames of one clip into a grid and
+// sets document.title = 'SHEET READY' — used to screenshot clips headlessly for review.
+const SHEET = params.get('sheet');
+if (SHEET) document.body.classList.add('sheet-mode');
+
+// ── Data ─────────────────────────────────────────────────────────────────────
+// The VRM loader script expects a LOADERS global that newer Babylon loader builds no longer define.
+window.LOADERS ??= BABYLON;
+await new Promise((res, rej) => {
+  const s = document.createElement('script');
+  s.src = 'https://xuhuisheng.github.io/babylonjs-vrm/babylon-vrm-loader.js';
+  s.onload = res; s.onerror = rej; document.head.appendChild(s);
+});
+const get = (u, fb) => fetch(u).then((r) => (r.ok ? r.json() : fb)).catch(() => fb);
+let clips = await get('review.json', null);
+if (!clips) clips = (await get('animations.json', [])).map((e) => ({ id: e.url.split('/').pop().replace('.vrma', ''), description: e.description }));
+const byId = new Map(clips.map((c) => [c.id, c]));
+const models = await get('api/models', ['models/Black/Black_F_1_Busi.vrm']);
+let verdicts = SHEET ? {} : await get('api/verdicts', {});
+
+// ── Sidebar ──────────────────────────────────────────────────────────────────
+const cats = ['idle candidate', 'other', 'sit/crouch', 'static', 'locomotion'].filter((c) => clips.some((x) => x.category === c));
+$('cat').innerHTML = (cats.length ? cats.map((c) => `<option>${c}</option>`).join('') : '') + '<option value="">all categories</option>';
+$('model').innerHTML = models.map((m) => `<option>${m}</option>`).join('');
+const saved = (() => { try { return JSON.parse(localStorage.getItem('vrmaViewer') || '{}'); } catch { return {}; } })();
+if (saved.cat !== undefined && [...$('cat').options].some((o) => o.value === saved.cat)) $('cat').value = saved.cat;
+if (saved.model && models.includes(saved.model)) $('model').value = saved.model;
+if (params.get('model')) $('model').value = params.get('model');
+
+let view = [];
+let cur = -1;
+function renderList() {
+  const q = $('search').value.trim().toLowerCase(), cat = $('cat').value, vf = $('verdictFilter').value, key = $('sort').value;
+  view = clips.filter((c) => (!cat || c.category === cat)
+    && (!q || c.id.toLowerCase().includes(q) || (c.description || '').toLowerCase().includes(q))
+    && (!vf || (vf === 'none' ? !verdicts[c.id] : verdicts[c.id]?.v === vf)));
+  view.sort((a, b) => key === 'id' ? a.id.localeCompare(b.id, undefined, { numeric: true })
+    : (a[key] ?? 1e9) - (b[key] ?? 1e9));
+  $('count').textContent = `${view.length} clips · ${Object.values(verdicts).filter((v) => v.v === 'keep').length} kept`;
+  $('list').innerHTML = view.map((c, i) => `<div class="row ${verdicts[c.id]?.v || ''}" data-i="${i}">
+      <span class="id">${c.id}</span><span class="d" title="${(c.description || '').replace(/"/g, '&quot;')}">${c.description || '—'}</span>
+      <span class="s">${c.idleScore ?? ''}</span></div>`).join('');
+  highlight();
+  try { localStorage.setItem('vrmaViewer', JSON.stringify({ cat: $('cat').value, model: $('model').value })); } catch {}
+}
+function highlight() {
+  document.querySelectorAll('.row.sel').forEach((r) => r.classList.remove('sel'));
+  const id = clipId;
+  const i = view.findIndex((c) => c.id === id);
+  const el = document.querySelector(`.row[data-i="${i}"]`);
+  if (el) { el.classList.add('sel'); el.scrollIntoView({ block: 'nearest' }); }
+  cur = i;
+}
+['search', 'cat', 'verdictFilter', 'sort'].forEach((id) => $(id).addEventListener('input', renderList));
+$('list').addEventListener('click', (e) => { const r = e.target.closest('.row'); if (r) loadClip(view[+r.dataset.i].id); });
+
+// ── Scene ────────────────────────────────────────────────────────────────────
+const canvas = $('renderCanvas');
+const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true });
+const scene = new BABYLON.Scene(engine);
+scene.clearColor = SHEET ? new BABYLON.Color4(1, 1, 1, 1) : new BABYLON.Color4(0.05, 0.07, 0.09, 1);
+const camera = new BABYLON.ArcRotateCamera('cam', Math.PI / 2, Math.PI / 2 - 0.1, 3.2, new BABYLON.Vector3(0, 0.9, 0), scene);
+camera.attachControl(canvas, true); camera.lowerRadiusLimit = 0.5; camera.upperRadiusLimit = 15; camera.wheelPrecision = 60;
+new BABYLON.HemisphericLight('hemi', new BABYLON.Vector3(0, 1, 0), scene);
+const dirL = new BABYLON.DirectionalLight('dir', new BABYLON.Vector3(-1, -2, -1), scene); dirL.intensity = 0.5;
+const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 6, height: 6 }, scene);
+const gm = new BABYLON.StandardMaterial('gm', scene); gm.diffuseColor = SHEET ? new BABYLON.Color3(.85, .85, .85) : new BABYLON.Color3(.15, .18, .22);
+gm.specularColor = BABYLON.Color3.Black(); ground.material = gm;
+
+let vrmMgr, hipsBone, leftFootBone, rootNode, avatar, boneEntries, modelMeshes = [];
+async function loadModel(path) {
+  stopClip();
+  modelMeshes.forEach((m) => m.dispose());
+  if (scene.metadata) scene.metadata.vrmManagers = [];
+  const r = await BABYLON.ImportMeshAsync(path, scene);
+  modelMeshes = r.meshes;
+  vrmMgr = scene.metadata?.vrmManagers?.at(-1);
+  if (!vrmMgr) throw new Error('VRM manager not found for ' + path);
+  hipsBone = vrmMgr.humanoidBone['hips'];
+  leftFootBone = vrmMgr.humanoidBone['leftFoot'];
+  rootNode = r.meshes[0];
+  avatar = new BABYLON.AnimatorAvatar('vrm-avatar', rootNode);
+  boneEntries = Object.entries(vrmMgr.humanoidBone?.nodeMap ?? {});
+}
+
+// Skip leading T-pose/reference frames (same idea as the old vrmaAll.html).
+function findMotionFrame(group, maxScan = 12, threshold = 0.015) {
+  const animBones = boneEntries.filter(([, b]) => group.targetedAnimations.some((ta) => ta.animation.targetProperty === 'rotationQuaternion' && ta.target === b));
+  if (!animBones.length) return group.from;
+  const limit = Math.min(group.from + maxScan, group.to);
+  group.goToFrame(group.from);
+  const ref = new Map(animBones.map(([, b]) => [b, b.rotationQuaternion?.clone()]));
+  let best = -1, bestF = group.from;
+  for (let f = group.from + 1; f <= limit; f++) {
+    group.goToFrame(f);
+    let s = 0;
+    for (const [, b] of animBones) { const q = b.rotationQuaternion, r = ref.get(b); if (q && r) s += 1 - Math.abs(BABYLON.Quaternion.Dot(q, r)); }
+    if (s > best) { best = s; bestF = f; }
+    if (s > threshold * animBones.length) break;
+  }
+  return bestF;
+}
+
+let group = null, container = null, fromF = 0, toF = 0, fps = 60, clipId = null, paused = false, loadToken = 0;
+function stopClip() {
+  if (group) { group.stop(); group.dispose(); group = null; }
+  if (container) { container.dispose(); container = null; }
+  if (scene.metadata?.vrmAnimationManagers) scene.metadata.vrmAnimationManagers = [];
+}
+async function loadClip(id) {
+  const token = ++loadToken;
+  clipId = id; highlight(); showInfo();
+  stopClip();
+  let ac;
+  try { ac = await BABYLON.LoadAssetContainerAsync(`vrma/${id}.vrma`, scene); }
+  catch (e) { $('title').innerHTML = `<span class="id">${id}</span> — failed to load (is the vrma/ folder there?)`; return; }
+  if (token !== loadToken) { ac.dispose(); return; }
+  container = ac;
+  const mgr = scene.metadata?.vrmAnimationManagers?.[0];
+  const ag = ac.animationGroups[0];
+  if (!mgr?.animationMap || !ag) { $('stats').textContent = 'no humanoid animation in this file'; return; }
+  const nodeMap = new Map();
+  ag.targetedAnimations.forEach((ta, i) => {
+    const bone = vrmMgr.humanoidBone[mgr.animationMap.get(i)];
+    if (bone && ta.target?.name) nodeMap.set(ta.target.name, bone.name);
+  });
+  group = avatar.retargetAnimationGroup(ag, {
+    animationGroupName: 'vrma-' + id, fixRootPosition: true, rootNodeName: hipsBone.name,
+    groundReferenceNodeName: leftFootBone?.name, mapNodeNames: nodeMap,
+  });
+  ag.stop();
+  fps = group.targetedAnimations[0]?.animation.framePerSecond || 60;
+  group.start(false, 1, group.from, group.to, false); group.pause();
+  fromF = findMotionFrame(group); toF = group.to;
+  group.stop();
+  group.start(true, +$('speed').value, fromF, toF, false);
+  if (paused) group.pause();
+  if (!SHEET) { scene.render(); camera.alpha = facingAlpha(); } // start each clip looking at the face
+  if (SHEET) await renderSheet();
+}
+
+function showInfo() {
+  const c = byId.get(clipId) || { id: clipId };
+  const v = verdicts[clipId];
+  $('title').innerHTML = `<span class="id">${c.id}</span> — ${c.description || 'no description'}`;
+  $('stats').textContent = c.duration == null ? '' :
+    `${c.category} · idle score ${c.idleScore} · ${c.duration}s · activity ${c.activity}°/s (arms ${c.arms}, legs ${c.legs}, torso ${c.torso})\n` +
+    `drift ${c.travel} legs · hips height ${c.hipsHeight} · knee bend ${c.knee}° · turn ${c.turn}° · loop seam ${c.seam}°` +
+    (c.flags?.length ? `\nflags: ${c.flags.join(', ')}` : '');
+  document.querySelectorAll('[data-v]').forEach((b) => b.classList.toggle('on', v?.v === b.dataset.v));
+  $('note').value = v?.note || '';
+  history.replaceState(null, '', `?clip=${clipId}`);
+}
+
+// ── Playback controls ────────────────────────────────────────────────────────
+scene.onBeforeRenderObservable.add(() => {
+  const h = hipsBone?.getAbsolutePosition();
+  if (h && !SHEET) camera.target = BABYLON.Vector3.Lerp(camera.target, new BABYLON.Vector3(h.x, 0.9, h.z), 0.05);
+  const a = group?.animatables[0];
+  if (a && !scrubbing) {
+    const f = a.masterFrame;
+    $('scrub').value = ((f - fromF) / Math.max(1, toF - fromF)) * 1000;
+    $('time').textContent = ((f - fromF) / fps).toFixed(1) + 's';
+  }
+});
+let scrubbing = false;
+$('scrub').addEventListener('pointerdown', () => (scrubbing = true));
+$('scrub').addEventListener('pointerup', () => (scrubbing = false));
+$('scrub').addEventListener('input', () => {
+  if (!group) return;
+  const f = fromF + ($('scrub').value / 1000) * (toF - fromF);
+  group.goToFrame(f);
+  $('time').textContent = ((f - fromF) / fps).toFixed(1) + 's';
+});
+function togglePause() { paused = !paused; if (group) paused ? group.pause() : group.play(true); $('play').textContent = paused ? '▶' : '⏸'; }
+$('play').onclick = togglePause;
+$('speed').oninput = () => { if (group) group.speedRatio = +$('speed').value; };
+const step = (d) => { if (!view.length) return; const i = cur < 0 ? 0 : (cur + d + view.length) % view.length; loadClip(view[i].id); };
+$('prev').onclick = () => step(-1); $('next').onclick = () => step(1);
+$('model').oninput = async () => { await loadModel($('model').value); renderList(); if (clipId) loadClip(clipId); };
+
+// ── Marks ────────────────────────────────────────────────────────────────────
+let saveTimer;
+function saveVerdicts() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => fetch('api/verdicts', { method: 'POST', body: JSON.stringify(verdicts, null, 1) }).catch(() => {}), 300);
+}
+function mark(v) {
+  if (!clipId) return;
+  const prev = verdicts[clipId];
+  if (prev?.v === v) delete verdicts[clipId];
+  else verdicts[clipId] = { v, note: prev?.note || '', description: byId.get(clipId)?.description || '' };
+  saveVerdicts(); showInfo();
+  const keepPos = cur; renderList();
+  if ($('verdictFilter').value) cur = Math.min(keepPos, view.length - 1);
+}
+document.querySelectorAll('[data-v]').forEach((b) => (b.onclick = () => mark(b.dataset.v)));
+$('note').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || !clipId) return;
+  verdicts[clipId] = { v: verdicts[clipId]?.v || 'maybe', note: $('note').value, description: byId.get(clipId)?.description || '' };
+  saveVerdicts(); showInfo(); renderList(); $('note').blur();
+});
+$('export').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(verdicts, null, 1)], { type: 'application/json' }));
+  a.download = 'vrma_verdicts.json'; a.click();
+};
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' && e.target.type !== 'range') return;
+  const k = e.key.toLowerCase();
+  if (k === 'arrowdown' || k === 'j') { e.preventDefault(); step(1); }
+  else if (k === 'arrowup' || k === 'k') { e.preventDefault(); step(-1); }
+  else if (k === ' ') { e.preventDefault(); togglePause(); }
+  else if (k === '1') mark('keep'); else if (k === '2') mark('maybe'); else if (k === '3') mark('reject');
+  else if (k === 'f') { camera.alpha = facingAlpha(); camera.beta = Math.PI / 2 - 0.1; }
+  else if (k === 's') { camera.alpha = facingAlpha() + Math.PI / 2; camera.beta = Math.PI / 2 - 0.1; }
+});
+
+// ── Contact sheet (?sheet=ID) ────────────────────────────────────────────────
+const FACE_FLIP = Math.PI; // Cross(left−right, up) points behind the chest on these rigs (checked on 19_08 and 141_20)
+// Camera alpha that looks at the character's chest, from the current shoulder line.
+// CMU subjects start facing any direction, so a fixed camera often shows the back.
+function facingAlpha() {
+  const L = vrmMgr.humanoidBone['leftUpperArm']?.getAbsolutePosition(), R = vrmMgr.humanoidBone['rightUpperArm']?.getAbsolutePosition();
+  if (!L || !R) return Math.PI / 2;
+  const fwd = BABYLON.Vector3.Cross(L.subtract(R), BABYLON.Vector3.Up());
+  return Math.atan2(fwd.z, fwd.x) + FACE_FLIP;
+}
+async function renderSheet() {
+  const N = 6, W = 480, H = 640, sheet = $('sheet');
+  sheet.width = W * N; sheet.height = H + 40;
+  sheet.style.width = '100%'; sheet.style.height = 'auto';
+  const ctx = sheet.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, sheet.width, sheet.height);
+  engine.setSize(W, H);
+  group.pause();
+  const side = params.get('view') === 'side';
+  // Face the character: CMU subjects start facing any direction. Use the shoulder
+  // line at the first tile to find which way the chest points.
+  group.goToFrame(fromF + 0.04 * (toF - fromF)); scene.render();
+  camera.alpha = facingAlpha() + (side ? Math.PI / 2 : 0); camera.beta = Math.PI / 2 - 0.1; camera.radius = 3.4;
+  for (let i = 0; i < N; i++) {
+    const f = fromF + (0.04 + 0.96 * i / (N - 1)) * (toF - fromF); // skip the mocap's opening reference pose
+    group.goToFrame(f);
+    scene.render();
+    const h = hipsBone.getAbsolutePosition();
+    camera.target.set(h.x, 0.85, h.z);
+    scene.render(); scene.render();
+    ctx.drawImage(canvas, i * W, 0, W, H);
+    ctx.fillStyle = '#000'; ctx.font = '22px sans-serif';
+    ctx.fillText(`${((f - fromF) / fps).toFixed(1)}s`, i * W + 10, H + 28);
+  }
+  const c = byId.get(clipId) || {};
+  ctx.font = 'bold 22px sans-serif'; ctx.fillText(`${clipId} — ${c.description || ''}`, 10, 26);
+  document.title = 'SHEET READY';
+}
+
+// ── Start ────────────────────────────────────────────────────────────────────
+engine.runRenderLoop(() => scene.render());
+addEventListener('resize', () => engine.resize());
+await loadModel($('model').value);
+renderList();
+const first = SHEET || params.get('clip') || view[0]?.id;
+if (first) loadClip(first);
+</script>
+</body>
+</html>
